@@ -51,15 +51,33 @@ Current registration behavior:
 
 ## Oracle Contract
 
-Purpose: store latest readings by location and reading type.
+Purpose: store weather and crop-health readings with authentication, history, and aggregation.
 
 Implemented methods:
 
-- `initialize(admin)`
-- `submit_reading(geo_cell, reading_type, value)`
-- `get_latest(geo_cell, reading_type)`
+- `initialize(admin, max_reading_age)` - Initialize with admin and max age for readings
+- `add_oracle_node(admin, oracle_address)` - Whitelist an oracle node (admin only)
+- `remove_oracle_node(admin, oracle_address)` - Remove oracle node from whitelist (admin only)
+- `is_whitelisted(oracle_address)` - Query whitelist status
+- `submit_reading(submitter, geo_cell, reading_type, value, reading_timestamp, signature)` - Submit authenticated reading
+- `get_latest(geo_cell, reading_type)` - Get most recent reading
+- `get_history(geo_cell, reading_type)` - Get historical readings (circular buffer)
+- `get_history_count(geo_cell, reading_type)` - Get count of readings in history
+- `aggregate_readings(geo_cell, reading_type, max_reading_age)` - Compute median of recent readings
+- `get_aggregated(geo_cell, reading_type)` - Retrieve aggregated (median) reading
+- `get_median(geo_cell, reading_type)` - Get median of all historical readings (deprecated)
 
-Important limitation: the oracle contract does not authenticate submitters, verify signatures, keep history, or aggregate multiple readings.
+New features implemented:
+
+- **Whitelist enforcement**: Only whitelisted oracle nodes can submit readings
+- **Authentication**: Requires submitter signature via `require_auth()`
+- **Timestamp validation**: Rejects readings that are too old (> max_reading_age)
+- **Future timestamp rejection**: Prevents readings with invalid timestamps
+- **Reading history**: Maintains circular buffer of historical submissions
+- **Aggregation**: Computes median from readings within specified time window
+- **Submitter tracking**: Records which oracle node submitted each reading
+
+Important limitation: the oracle contract does not yet perform cryptographic signature verification (placeholder for future implementation).
 
 ## Trigger Contract
 
@@ -113,8 +131,7 @@ Implemented safeguards:
 Known gaps:
 
 - No token transfer integration.
-- No oracle access control.
-- No oracle data verification.
+- No cryptographic signature verification for oracle readings (placeholder implemented).
 - No cross-contract authorization for pool payout release.
 - No premium calculation or premium collection.
 - No security audit.

@@ -203,6 +203,108 @@ impl OracleContract {
         Ok(())
     }
 
+    /// Aggregate readings using median calculation (admin only)
+    pub fn aggregate_readings(
+        env: Env,
+        geo_cell: String,
+        reading_type: ReadingType,
+        max_reading_age: u64,
+    ) -> Result<(), Error> {
+        let config: Config = env
+            .storage()
+            .instance()
+            .get(&DataKey::Config)
+            .ok_or(Error::NotInitialized)?;
+
+        // Get the history of readings
+        let history_key = DataKey::ReadingHistory(geo_cell.clone(), reading_type);
+        let history: Vec<HistoricalReading> = env
+            .storage()
+            .persistent()
+            .get(&history_key)
+            .ok_or(Error::NoReadingsAvailable)?;
+
+        if history.is_empty() {
+            return Err(Error::NoReadingsAvailable);
+        }
+
+        let current_time = env.ledger().timestamp();
+
+        // Filter readings within the specified age window
+        let mut valid_readings: Vec<u32> = vec![&env];
+        for reading in history.iter() {
+            let reading_age = current_time - reading.timestamp;
+            if reading_age <= max_reading_age {
+                valid_readings.push_back(reading.value);
+            }
+        }
+
+        if valid_readings.is_empty() {
+            return Err(Error::NoReadingsAvailable);
+        }
+
+        // Calculate median
+        let median = Self::calculate_median(env.clone(), valid_readings.clone())?;
+        let sample_count = valid_readings.len() as u32;
+
+        // Store aggregated reading
+        let aggregated = AggregatedReading {
+            geo_cell: geo_cell.clone(),
+            reading_type,
+            value: median,
+            timestamp: current_time,
+            sample_count,
+        };
+
+        let agg_key = DataKey::AggregatedReading(geo_cell, reading_type);
+        env.storage().persistent().set(&agg_key, &aggregated);
+
+        Ok(())
+    }
+
+    /// Get the aggregated reading (median) for a geo cell and reading type
+    pub fn get_aggregated(
+        env: Env,
+        geo_cell: String,
+        reading_type: ReadingType,
+    ) -> Result<AggregatedReading, Error> {
+        let agg_key = DataKey::AggregatedReading(geo_cell, reading_type);
+        env.storage()
+            .persistent()
+            .get(&agg_key)
+            .ok_or(Error::NoAggregatedReading)
+    }
+
+    /// Calculate median of a set of values
+    fn calculate_median(env: Env, mut values: Vec<u32>) -> Result<u32, Error> {
+        if values.is_empty() {
+            return Err(Error::NoReadingsAvailable);
+        }
+
+        // Simple bubble sort for small vectors
+        let len = values.len();
+        for i in 0..len {
+            for j in 0..(len - i - 1) {
+                if values.get(j).unwrap() > values.get(j + 1).unwrap() {
+                    let temp = values.get(j).unwrap();
+                    values.set(j, values.get(j + 1).unwrap());
+                    values.set(j + 1, temp);
+                }
+            }
+        }
+
+        // Calculate median
+        let median = if len % 2 == 0 {
+            // For even count, return average of two middle values
+            (values.get(len / 2 - 1).unwrap() + values.get(len / 2).unwrap()) / 2
+        } else {
+            // For odd count, return middle value
+            values.get(len / 2).unwrap()
+        };
+
+        Ok(median)
+    }
+
     /// Get latest reading for a geo cell and reading type
     pub fn get_latest(
         env: Env,
@@ -229,7 +331,7 @@ impl OracleContract {
             .ok_or(Error::NoReadingsAvailable)
     }
 
-    /// Get the median of recent readings
+    /// Get the median of recent readings (deprecated in favor of get_aggregated)
     pub fn get_median(env: Env, geo_cell: String, reading_type: ReadingType) -> Result<u32, Error> {
         let history = Self::get_history(env.clone(), geo_cell.clone(), reading_type)?;
 
@@ -243,28 +345,7 @@ impl OracleContract {
             values.push_back(reading.value);
         }
 
-        // Simple bubble sort for small vectors
-        let len = values.len();
-        for i in 0..len {
-            for j in 0..(len - i - 1) {
-                if values.get(j).unwrap() > values.get(j + 1).unwrap() {
-                    let temp = values.get(j).unwrap();
-                    values.set(j, values.get(j + 1).unwrap());
-                    values.set(j + 1, temp);
-                }
-            }
-        }
-
-        // Calculate median
-        let median = if len % 2 == 0 {
-            // For even count, return average of two middle values
-            (values.get(len / 2 - 1).unwrap() + values.get(len / 2).unwrap()) / 2
-        } else {
-            // For odd count, return middle value
-            values.get(len / 2).unwrap()
-        };
-
-        Ok(median)
+        Self::calculate_median(env, values)
     }
 
     /// Get the count of readings in history

@@ -226,4 +226,61 @@ impl OracleContract {
         let history = Self::get_history(env, geo_cell, reading_type)?;
         Ok(history.len())
     }
+
+    /// Add an oracle node to the whitelist (admin only)
+    pub fn add_oracle_node(
+        env: Env,
+        admin: Address,
+        oracle_address: Address,
+    ) -> Result<(), Error> {
+        admin.require_auth();
+
+        let config: Config = env
+            .storage()
+            .instance()
+            .get(&DataKey::Config)
+            .ok_or(Error::NotInitialized)?;
+
+        if admin != config.admin {
+            return Err(Error::NotAuthorized);
+        }
+
+        let whitelist_key = DataKey::Whitelist(oracle_address);
+        env.storage().persistent().set(&whitelist_key, &true);
+
+        Ok(())
+    }
+
+    /// Remove an oracle node from the whitelist (admin only)
+    pub fn remove_oracle_node(
+        env: Env,
+        admin: Address,
+        oracle_address: Address,
+    ) -> Result<(), Error> {
+        admin.require_auth();
+
+        let config: Config = env
+            .storage()
+            .instance()
+            .get(&DataKey::Config)
+            .ok_or(Error::NotInitialized)?;
+
+        if admin != config.admin {
+            return Err(Error::NotAuthorized);
+        }
+
+        let whitelist_key = DataKey::Whitelist(oracle_address);
+        env.storage().persistent().remove(&whitelist_key);
+
+        Ok(())
+    }
+
+    /// Check if an address is whitelisted
+    pub fn is_whitelisted(env: Env, oracle_address: Address) -> bool {
+        let whitelist_key = DataKey::Whitelist(oracle_address);
+        env.storage()
+            .persistent()
+            .get::<_, bool>(&whitelist_key)
+            .unwrap_or(false)
+    }
 }

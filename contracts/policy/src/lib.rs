@@ -48,6 +48,7 @@ pub enum Error {
     NotInitialized = 2,
     InvalidAmount = 3,
     PolicyNotFound = 4,
+    PolicyNotExpired = 5,
 }
 
 #[contract]
@@ -176,6 +177,32 @@ impl PolicyContract {
             .ok_or(Error::PolicyNotFound)?;
 
         policy.state = new_state;
+        env.storage()
+            .persistent()
+            .set(&DataKey::Policy(policy_id), &policy);
+
+        Ok(())
+    }
+
+    /// Mark a policy as expired once its season has ended
+    pub fn expire_policy(env: Env, policy_id: u64) -> Result<(), Error> {
+        let _config: Config = env
+            .storage()
+            .instance()
+            .get(&DataKey::Config)
+            .ok_or(Error::NotInitialized)?;
+
+        let mut policy: Policy = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Policy(policy_id))
+            .ok_or(Error::PolicyNotFound)?;
+
+        if env.ledger().timestamp() < policy.season_end {
+            return Err(Error::PolicyNotExpired);
+        }
+
+        policy.state = PolicyState::Expired;
         env.storage()
             .persistent()
             .set(&DataKey::Policy(policy_id), &policy);

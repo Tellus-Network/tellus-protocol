@@ -210,3 +210,96 @@ impl PolicyContract {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::{PolicyContract, PolicyState};
+    use soroban_sdk::{
+        testutils::{Address as _, Ledger, LedgerInfo},
+        Address, Env, String,
+    };
+
+    fn setup_env_with_time(timestamp: u64) -> Env {
+        let env = Env::default();
+        env.ledger().set(LedgerInfo {
+            timestamp,
+            protocol_version: 20,
+            sequence_number: 10,
+            network_id: Default::default(),
+            base_reserve: 10,
+            min_temp_entry_ttl: 10,
+            min_persistent_entry_ttl: 10,
+            max_entry_ttl: 3110400,
+        });
+        env
+    }
+
+    fn register_test_policy(env: &Env) -> (Address, u64) {
+        env.mock_all_auths();
+
+        let admin = Address::generate(env);
+        let farmer = Address::generate(env);
+        let pool_contract = Address::generate(env);
+        let contract_id = env.register_contract(None, PolicyContract);
+
+        let policy_id = env.as_contract(&contract_id, || {
+            PolicyContract::initialize(env.clone(), admin, pool_contract).unwrap();
+            PolicyContract::register_policy(
+                env.clone(),
+                farmer,
+                String::from_str(env, "9q5ct"),
+                String::from_str(env, "maize"),
+                10_000,
+                200,
+            )
+            .unwrap()
+        });
+
+        (contract_id, policy_id)
+    }
+
+    #[test]
+    fn expire_policy_rejects_active_season() {
+        let env = setup_env_with_time(1_000_000);
+        let (contract_id, policy_id) = register_test_policy(&env);
+
+        let result = env.as_contract(&contract_id, || {
+            PolicyContract::expire_policy(env.clone(), policy_id)
+        });
+
+        assert!(result.is_err());
+        let policy = env.as_contract(&contract_id, || {
+            PolicyContract::get_policy(env.clone(), policy_id).unwrap()
+        });
+        assert!(policy.state == PolicyState::Active);
+    }
+
+    #[test]
+    fn expire_policy_marks_policy_expired_after_season_end() {
+        let env = setup_env_with_time(1_000_000);
+        let (contract_id, policy_id) = register_test_policy(&env);
+        let policy = env.as_contract(&contract_id, || {
+            PolicyContract::get_policy(env.clone(), policy_id).unwrap()
+        });
+
+        env.ledger().set(LedgerInfo {
+            timestamp: policy.season_end,
+            protocol_version: 20,
+            sequence_number: 11,
+            network_id: Default::default(),
+            base_reserve: 10,
+            min_temp_entry_ttl: 10,
+            min_persistent_entry_ttl: 10,
+            max_entry_ttl: 3110400,
+        });
+
+        env.as_contract(&contract_id, || {
+            PolicyContract::expire_policy(env.clone(), policy_id).unwrap()
+        });
+
+        let policy = env.as_contract(&contract_id, || {
+            PolicyContract::get_policy(env.clone(), policy_id).unwrap()
+        });
+        assert!(policy.state == PolicyState::Expired);
+    }
+}

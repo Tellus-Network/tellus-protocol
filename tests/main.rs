@@ -4,7 +4,7 @@ extern crate tellus_pool;
 extern crate tellus_trigger;
 
 mod integration_test;
-pub use integration_test::{create_token_contract, setup_env_with_time};
+pub use integration_test::{create_token_contract, setup_env_with_time}; // helper exports for tests
 
 mod end_to_end_tests;
 mod oracle_tests;

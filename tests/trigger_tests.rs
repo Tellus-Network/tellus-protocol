@@ -94,6 +94,7 @@ fn test_trigger_flow_drought() {
 
     // Evaluate policy
     trigger_client.evaluate_policy(&policy_id);
+    assert!(trigger_client.try_evaluate_policy(&policy_id).is_err());
 
     // Check payout was made
     let farmer_balance =

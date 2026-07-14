@@ -184,40 +184,53 @@ impl OracleContract {
             &signature,
         )?;
 
-        // Store the latest reading
-        let reading = LatestReading {
+        Self::store_reading(
+            &env,
+            submitter,
+            geo_cell,
+            reading_type,
+            value,
+            reading_timestamp,
+            config.max_history_size,
+        );
+
+        Ok(())
+    }
+
+    fn store_reading(
+        env: &Env,
+        submitter: Address,
+        geo_cell: String,
+        reading_type: ReadingType,
+        value: u32,
+        timestamp: u64,
+        max_history_size: u32,
+    ) {
+        let latest = LatestReading {
             geo_cell: geo_cell.clone(),
             reading_type,
             value,
-            timestamp: reading_timestamp,
+            timestamp,
         };
-
-        let latest_key = DataKey::LatestReading(geo_cell.clone(), reading_type);
-        env.storage().persistent().set(&latest_key, &reading);
-
-        // Add to history
-        let history_key = DataKey::ReadingHistory(geo_cell.clone(), reading_type);
+        env.storage().persistent().set(
+            &DataKey::LatestReading(geo_cell.clone(), reading_type),
+            &latest,
+        );
+        let history_key = DataKey::ReadingHistory(geo_cell, reading_type);
         let mut history: Vec<HistoricalReading> = env
             .storage()
             .persistent()
             .get(&history_key)
-            .unwrap_or(vec![&env]);
-
-        let historical_reading = HistoricalReading {
-            value,
-            timestamp: reading_timestamp,
-            submitter,
-        };
-
-        // Maintain circular buffer behavior
-        if history.len() >= config.max_history_size {
+            .unwrap_or(vec![env]);
+        if history.len() >= max_history_size {
             history.remove(0);
         }
-
-        history.push_back(historical_reading);
+        history.push_back(HistoricalReading {
+            value,
+            timestamp,
+            submitter,
+        });
         env.storage().persistent().set(&history_key, &history);
-
-        Ok(())
     }
 
     /// Validate signature on a reading (extensible for future cryptographic verification)

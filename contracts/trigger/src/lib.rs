@@ -93,6 +93,7 @@ pub enum Error {
     NotInitialized = 2,
     AlreadyTriggered = 3,
     ThresholdNotMet = 4,
+    InvalidPolicyId = 5,
 }
 
 #[contract]
@@ -126,6 +127,9 @@ impl TriggerContract {
 
     /// Evaluate a policy
     pub fn evaluate_policy(env: Env, policy_id: u64) -> Result<(), Error> {
+        if policy_id == 0 {
+            return Err(Error::InvalidPolicyId);
+        }
         let config: Config = env
             .storage()
             .instance()

@@ -5,6 +5,21 @@ use soroban_sdk::{testutils::Address as _, Address, BytesN, String};
 use crate::{create_token_contract, setup_env_with_time};
 
 #[test]
+fn test_trigger_rejects_zero_policy_id() {
+    let env = setup_env_with_time(1_500_000);
+    let admin = Address::generate(&env);
+    let trigger_id = env.register_contract(None, tellus_trigger::TriggerContract);
+    let client = tellus_trigger::TriggerContractClient::new(&env, &trigger_id);
+    client.initialize(
+        &admin,
+        &Address::generate(&env),
+        &Address::generate(&env),
+        &Address::generate(&env),
+    );
+    assert!(client.try_evaluate_policy(&0).is_err());
+}
+
+#[test]
 fn test_trigger_flow_drought() {
     let env = setup_env_with_time(1500000);
     env.mock_all_auths();

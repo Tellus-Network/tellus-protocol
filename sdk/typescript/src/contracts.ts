@@ -9,7 +9,7 @@ import {
   scValToNative,
   Keypair,
 } from '@stellar/stellar-sdk';
-import { Policy, PoolStats, AggregatedReading } from './types';
+import { Policy, PoolStats, AggregatedReading, TriggerEvent } from './types';
 
 export class ContractClient {
   protected contract: Contract;
@@ -272,6 +272,21 @@ export class OracleContractClient extends ContractClient {
 }
 
 export class TriggerContractClient extends ContractClient {
+  async getTriggerEvent(policyId: bigint): Promise<TriggerEvent> {
+    const operation = this.contract.call(
+      'get_trigger_event',
+      nativeToScVal(policyId, { type: 'u64' })
+    );
+    const result = await this.simulateTransaction(
+      'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
+      operation
+    );
+    if (SorobanRpc.Api.isSimulationSuccess(result)) {
+      return scValToNative(result.result!.retval);
+    }
+    throw new Error('Failed to get trigger event');
+  }
+
   async evaluatePolicy(sourceKeypair: Keypair, policyId: bigint): Promise<void> {
     const operation = this.contract.call(
       'evaluate_policy',

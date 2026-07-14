@@ -12,6 +12,7 @@ import {
   Policy,
   PoolStats,
   AggregatedReading,
+  TriggerEvent,
 } from './types';
 
 /**
@@ -172,5 +173,10 @@ export class TellusClient {
    */
   async isTriggered(policyId: bigint): Promise<boolean> {
     return await this.triggerClient.isTriggered(policyId);
+  }
+
+  /** Get the persisted payout audit record for a triggered policy. */
+  async getTriggerEvent(policyId: bigint): Promise<TriggerEvent> {
+    return await this.triggerClient.getTriggerEvent(policyId);
   }
 }

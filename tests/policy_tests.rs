@@ -46,6 +46,7 @@ fn test_policy_registration() {
     assert_eq!(policy.farmer, farmer);
     assert_eq!(policy.coverage_amount, 10_000);
     assert_eq!(policy.state, tellus_policy::PolicyState::Active);
+    assert_eq!(pool_client.get_policy_lock(&policy_id), 10_000);
 }
 
 #[test]

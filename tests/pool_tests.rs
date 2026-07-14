@@ -262,3 +262,21 @@ fn test_pool_release_payout() {
         soroban_sdk::token::Client::new(&env, &token_client.address).balance(&farmer);
     assert_eq!(farmer_balance, 10_000);
 }
+
+#[test]
+fn test_pool_rejects_payout_above_policy_lock() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let provider = Address::generate(&env);
+    let farmer = Address::generate(&env);
+    let token_client = create_token_contract(&env, &token_admin);
+    token_client.mint(&provider, &100_000);
+    let pool_id = env.register_contract(None, tellus_pool::PoolContract);
+    let client = tellus_pool::PoolContractClient::new(&env, &pool_id);
+    client.initialize(&admin, &token_client.address, &500);
+    client.deposit(&provider, &100_000);
+    client.lock_coverage(&1, &5_000);
+    assert!(client.try_release_payout(&1, &farmer, &5_001).is_err());
+}

@@ -87,7 +87,7 @@ Submits a reading from a whitelisted oracle node.
 - `submitter` must be whitelisted (returns `NotWhitelisted` if not)
 - `reading_timestamp` must be valid: not zero and not in the future (returns `InvalidTimestamp` if invalid)
 - Reading must not be older than `max_reading_age` (returns `StaleReading` if too old)
-- Signature structure is validated (placeholder for future cryptographic verification)
+- The signature is accepted as an opaque 64-byte value; cryptographic verification is not implemented yet
 
 **Behavior:**
 - Updates the latest reading for the `(geo_cell, reading_type)` pair
@@ -210,6 +210,9 @@ The contract stores raw unsigned integer values and does not enforce units. Inte
 - **Deviation detection**: Flag readings that deviate significantly from median
 - **Timestamp sources**: Allow submitter's signed timestamp (currently uses ledger time)
 
+Until signature verification is implemented, consumers must treat whitelist membership and
+Soroban address authentication—not the `signature` argument—as the reading's trust boundary.
+
 ## Usage Example
 
 ```
@@ -228,4 +231,3 @@ The contract stores raw unsigned integer values and does not enforce units. Inte
 - Aggregation is performed on-demand; results are cached
 - Signature parameter is reserved for future cryptographic verification
 - Reading age is checked against ledger timestamp, not provided timestamp
-

@@ -45,6 +45,7 @@ pub enum Error {
     InsufficientShares = 4,
     InvalidAmount = 5,
     PolicyNotLocked = 6,
+    PolicyAlreadyLocked = 7,
 }
 
 #[contract]
@@ -223,6 +224,14 @@ impl PoolContract {
             .instance()
             .get(&DataKey::Config)
             .ok_or(Error::NotInitialized)?;
+
+        if env
+            .storage()
+            .persistent()
+            .has(&DataKey::PolicyLock(policy_id))
+        {
+            return Err(Error::PolicyAlreadyLocked);
+        }
 
         let total_capital: i128 = env
             .storage()

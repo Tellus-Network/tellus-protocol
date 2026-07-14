@@ -363,6 +363,14 @@ impl PoolContract {
             .unwrap_or(0)
     }
 
+    /// Get the pool's immutable initialization configuration.
+    pub fn get_config(env: Env) -> Result<PoolConfig, Error> {
+        env.storage()
+            .instance()
+            .get(&DataKey::Config)
+            .ok_or(Error::NotInitialized)
+    }
+
     /// Get provider's share balance
     pub fn get_provider_shares(env: Env, provider: Address) -> i128 {
         let provider_key = DataKey::Provider(provider);

@@ -70,6 +70,28 @@ pub struct PolicyContract;
 
 #[contractimpl]
 impl PolicyContract {
+    fn validate_policy_input(
+        farm_geohash: &String,
+        crop_type: &String,
+        season_start: u64,
+        season_end: u64,
+        coverage_amount: i128,
+    ) -> Result<(), Error> {
+        if coverage_amount <= 0 {
+            return Err(Error::InvalidAmount);
+        }
+        if season_end <= season_start {
+            return Err(Error::InvalidSeason);
+        }
+        if farm_geohash.is_empty() {
+            return Err(Error::InvalidGeohash);
+        }
+        if crop_type.is_empty() {
+            return Err(Error::InvalidCropType);
+        }
+        Ok(())
+    }
+
     /// Initialize the policy contract
     pub fn initialize(env: Env, admin: Address, pool_contract: Address) -> Result<(), Error> {
         if env.storage().instance().has(&DataKey::Config) {
@@ -101,18 +123,13 @@ impl PolicyContract {
     ) -> Result<u64, Error> {
         farmer.require_auth();
 
-        if coverage_amount <= 0 {
-            return Err(Error::InvalidAmount);
-        }
-        if season_end <= season_start {
-            return Err(Error::InvalidSeason);
-        }
-        if farm_geohash.len() == 0 {
-            return Err(Error::InvalidGeohash);
-        }
-        if crop_type.len() == 0 {
-            return Err(Error::InvalidCropType);
-        }
+        Self::validate_policy_input(
+            &farm_geohash,
+            &crop_type,
+            season_start,
+            season_end,
+            coverage_amount,
+        )?;
 
         let config: Config = env
             .storage()

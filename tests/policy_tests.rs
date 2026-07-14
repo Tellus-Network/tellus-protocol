@@ -59,7 +59,16 @@ fn test_policy_rejects_zero_coverage() {
     let policy_id = env.register_contract(None, tellus_policy::PolicyContract);
     let client = tellus_policy::PolicyContractClient::new(&env, &policy_id);
     client.initialize(&admin, &pool_id);
-    let result = client.try_register_policy(&farmer, &String::from_str(&env, "9q5ct"), &String::from_str(&env, "maize"), &1, &2, &0, &200, &7000);
+    let result = client.try_register_policy(
+        &farmer,
+        &String::from_str(&env, "9q5ct"),
+        &String::from_str(&env, "maize"),
+        &1,
+        &2,
+        &0,
+        &200,
+        &7000,
+    );
     assert!(result.is_err());
 }
 
@@ -73,7 +82,16 @@ fn test_policy_rejects_negative_coverage() {
     let policy_id = env.register_contract(None, tellus_policy::PolicyContract);
     let client = tellus_policy::PolicyContractClient::new(&env, &policy_id);
     client.initialize(&admin, &pool_id);
-    let result = client.try_register_policy(&farmer, &String::from_str(&env, "9q5ct"), &String::from_str(&env, "maize"), &1, &2, &-1, &200, &7000);
+    let result = client.try_register_policy(
+        &farmer,
+        &String::from_str(&env, "9q5ct"),
+        &String::from_str(&env, "maize"),
+        &1,
+        &2,
+        &-1,
+        &200,
+        &7000,
+    );
     assert!(result.is_err());
 }
 
@@ -87,7 +105,16 @@ fn test_policy_rejects_reversed_season() {
     let policy_id = env.register_contract(None, tellus_policy::PolicyContract);
     let client = tellus_policy::PolicyContractClient::new(&env, &policy_id);
     client.initialize(&admin, &pool_id);
-    let result = client.try_register_policy(&farmer, &String::from_str(&env, "9q5ct"), &String::from_str(&env, "maize"), &2, &1, &1, &200, &7000);
+    let result = client.try_register_policy(
+        &farmer,
+        &String::from_str(&env, "9q5ct"),
+        &String::from_str(&env, "maize"),
+        &2,
+        &1,
+        &1,
+        &200,
+        &7000,
+    );
     assert!(result.is_err());
 }
 
@@ -101,7 +128,16 @@ fn test_policy_rejects_empty_geohash() {
     let policy_id = env.register_contract(None, tellus_policy::PolicyContract);
     let client = tellus_policy::PolicyContractClient::new(&env, &policy_id);
     client.initialize(&admin, &pool_id);
-    let result = client.try_register_policy(&farmer, &String::from_str(&env, ""), &String::from_str(&env, "maize"), &1, &2, &1, &200, &7000);
+    let result = client.try_register_policy(
+        &farmer,
+        &String::from_str(&env, ""),
+        &String::from_str(&env, "maize"),
+        &1,
+        &2,
+        &1,
+        &200,
+        &7000,
+    );
     assert!(result.is_err());
 }
 
@@ -115,7 +151,16 @@ fn test_policy_rejects_empty_crop_type() {
     let policy_id = env.register_contract(None, tellus_policy::PolicyContract);
     let client = tellus_policy::PolicyContractClient::new(&env, &policy_id);
     client.initialize(&admin, &pool_id);
-    let result = client.try_register_policy(&farmer, &String::from_str(&env, "9q5ct"), &String::from_str(&env, ""), &1, &2, &1, &200, &7000);
+    let result = client.try_register_policy(
+        &farmer,
+        &String::from_str(&env, "9q5ct"),
+        &String::from_str(&env, ""),
+        &1,
+        &2,
+        &1,
+        &200,
+        &7000,
+    );
     assert!(result.is_err());
 }
 
@@ -229,9 +274,20 @@ fn test_policy_cannot_reactivate_expired_policy() {
     let contract_id = env.register_contract(None, tellus_policy::PolicyContract);
     let client = tellus_policy::PolicyContractClient::new(&env, &contract_id);
     client.initialize(&admin, &pool_id);
-    let id = client.register_policy(&farmer, &String::from_str(&env, "9q5ct"), &String::from_str(&env, "maize"), &1_000_000, &2_000_000, &10_000, &200, &7000);
+    let id = client.register_policy(
+        &farmer,
+        &String::from_str(&env, "9q5ct"),
+        &String::from_str(&env, "maize"),
+        &1_000_000,
+        &2_000_000,
+        &10_000,
+        &200,
+        &7000,
+    );
     client.expire_policy(&id);
-    assert!(client.try_update_policy_state(&id, &tellus_policy::PolicyState::Active).is_err());
+    assert!(client
+        .try_update_policy_state(&id, &tellus_policy::PolicyState::Active)
+        .is_err());
 }
 
 #[test]
@@ -251,7 +307,18 @@ fn test_policy_cannot_reactivate_triggered_policy() {
     let contract_id = env.register_contract(None, tellus_policy::PolicyContract);
     let client = tellus_policy::PolicyContractClient::new(&env, &contract_id);
     client.initialize(&admin, &pool_id);
-    let id = client.register_policy(&farmer, &String::from_str(&env, "9q5ct"), &String::from_str(&env, "maize"), &1, &2, &10_000, &200, &7000);
+    let id = client.register_policy(
+        &farmer,
+        &String::from_str(&env, "9q5ct"),
+        &String::from_str(&env, "maize"),
+        &1,
+        &2,
+        &10_000,
+        &200,
+        &7000,
+    );
     client.update_policy_state(&id, &tellus_policy::PolicyState::Triggered);
-    assert!(client.try_update_policy_state(&id, &tellus_policy::PolicyState::Active).is_err());
+    assert!(client
+        .try_update_policy_state(&id, &tellus_policy::PolicyState::Active)
+        .is_err());
 }

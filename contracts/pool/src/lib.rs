@@ -355,6 +355,14 @@ impl PoolContract {
         })
     }
 
+    /// Get the amount reserved for a policy.
+    pub fn get_policy_lock(env: Env, policy_id: u64) -> i128 {
+        env.storage()
+            .persistent()
+            .get(&DataKey::PolicyLock(policy_id))
+            .unwrap_or(0)
+    }
+
     /// Get provider's share balance
     pub fn get_provider_shares(env: Env, provider: Address) -> i128 {
         let provider_key = DataKey::Provider(provider);

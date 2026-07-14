@@ -23,6 +23,23 @@ fn test_pool_initialization() {
 }
 
 #[test]
+fn test_pool_rejects_zero_deposit() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let provider = Address::generate(&env);
+    let token_client = create_token_contract(&env, &token_admin);
+    let pool_contract_id = env.register_contract(None, tellus_pool::PoolContract);
+    let pool_client = tellus_pool::PoolContractClient::new(&env, &pool_contract_id);
+    pool_client.initialize(&admin, &token_client.address, &500);
+
+    assert!(pool_client.try_deposit(&provider, &0).is_err());
+    assert_eq!(pool_client.get_pool_stats().total_capital, 0);
+}
+
+#[test]
 fn test_pool_deposit_and_withdraw() {
     let env = Env::default();
     env.mock_all_auths();

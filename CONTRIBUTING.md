@@ -25,7 +25,7 @@ Clone your fork or local copy, then install dependencies:
 cargo build
 
 cd sdk/typescript
-npm install
+npm install # install SDK dependencies
 cd ../..
 ```
 

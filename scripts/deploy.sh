@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 echo "🚀 Deploying Tellus Protocol contracts to Stellar Testnet"
 

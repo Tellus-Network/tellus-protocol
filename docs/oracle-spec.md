@@ -223,7 +223,7 @@ The contract stores raw unsigned integer values and does not enforce units. Inte
 
 ## Implementation Notes
 
-- Median calculation uses bubble sort for simplicity; suitable for small sample sizes
+- Median calculation uses bubble sort for simplicity; suitable for small sample sizes — consider optimizing for large samples
 - Circular buffer maintains only the most recent `max_history_size` readings
 - Aggregation is performed on-demand; results are cached
 - Signature parameter is reserved for future cryptographic verification

@@ -19,7 +19,7 @@ Implemented:
 
 - Soroban contracts for pool, policy, oracle, and trigger modules.
 - Rust unit and integration tests for the contract modules.
-- Basic TypeScript SDK scaffolding.
+- Basic TypeScript SDK scaffolding. (work in progress)
 - Deployment and seed scripts for local/testnet experimentation.
 
 Not implemented yet:

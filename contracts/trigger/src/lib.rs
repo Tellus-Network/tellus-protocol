@@ -176,6 +176,7 @@ impl TriggerContract {
                 payout_amount,
                 trigger_reason: String::from_str(&env, "drought_detected"),
             };
+            // Persist trigger event for audit and replay
 
             env.storage()
                 .persistent()

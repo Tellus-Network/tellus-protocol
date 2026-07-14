@@ -14,6 +14,7 @@ pub fn create_token_contract<'a>(env: &Env, admin: &Address) -> token::StellarAs
 // Helper function to setup test environment with timestamp
 pub fn setup_env_with_time(timestamp: u64) -> Env {
     let env = Env::default();
+    // test environment initialized with provided timestamp
     env.ledger().set(LedgerInfo {
         timestamp,
         protocol_version: 20,

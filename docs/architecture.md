@@ -26,7 +26,7 @@ Implemented methods:
 - `get_provider_shares(provider)`
 - `get_provider_value(provider)`
 
-Important limitation: the pool contract updates accounting values only. It does not transfer a Stellar token when deposits, withdrawals, or payouts occur.
+Important limitation: the pool contract updates accounting values only. It does not transfer a Stellar token when deposits, withdrawals, or payouts occur. (no token transfers simulated)
 
 ## Policy Contract
 

@@ -61,7 +61,7 @@ export class TellusClient {
   /**
    * Deposit capital into the liquidity pool
    * @param keypair - Keypair of the liquidity provider
-   * @param amount - Amount to deposit (in stroops)
+   * @param amount - Amount to deposit (in stroops, smallest unit)
    * @returns Number of LP shares minted
    */
   async deposit(keypair: Keypair, amount: bigint): Promise<bigint> {

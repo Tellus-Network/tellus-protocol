@@ -129,7 +129,7 @@ impl PolicyContract {
 
         // Reserve pool capacity before persisting the policy. A failed
         // cross-contract call aborts the registration transaction.
-        PoolClient::new(&env, &config.pool_contract).lock_coverage(&policy_id, &coverage_amount);
+        PoolClient::new(&env, &config.pool_contract).lock_coverage(&policy_id, &coverage_amount); // reserve pool capacity (cross-contract call)
 
         // Store policy
         env.storage()

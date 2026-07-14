@@ -333,7 +333,7 @@ impl PoolContract {
             .unwrap_or(0);
 
         let utilization_ratio = if total_capital > 0 {
-            ((locked_amount * 10000) / total_capital) as u32
+            ((locked_amount * 10000) / total_capital) as u32 // basis points (1/10000)
         } else {
             0
         };

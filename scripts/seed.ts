@@ -9,6 +9,7 @@ import * as fs from 'fs';
 
 async function main() {
   console.log('🌱 Seeding Tellus Protocol testnet...\n');
+  console.debug('seed script starting');
 
   // Load deployed contract addresses
   const deployed = JSON.parse(fs.readFileSync('deployed_contracts.json', 'utf-8'));

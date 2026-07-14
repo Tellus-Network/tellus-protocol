@@ -186,6 +186,15 @@ impl PolicyContract {
             .unwrap_or(Vec::new(&env))
     }
 
+    /// Return the number of policies registered so far.
+    pub fn get_policy_count(env: Env) -> u64 {
+        env.storage()
+            .instance()
+            .get::<_, u64>(&DataKey::NextPolicyId)
+            .unwrap_or(1)
+            .saturating_sub(1)
+    }
+
     /// Update policy state
     pub fn update_policy_state(
         env: Env,

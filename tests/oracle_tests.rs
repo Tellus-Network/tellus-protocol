@@ -69,6 +69,9 @@ fn test_oracle_submit_reading() {
         oracle_client.get_history_count(&geo_cell, &tellus_oracle::ReadingType::Rainfall),
         1
     );
+    assert!(oracle_client
+        .try_aggregate_readings(&geo_cell, &tellus_oracle::ReadingType::Rainfall, &0)
+        .is_err());
 }
 
 #[test]

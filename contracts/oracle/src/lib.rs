@@ -114,6 +114,7 @@ pub enum Error {
     StaleReading = 7,        // Reading timestamp is too old
     InvalidTimestamp = 8,    // Timestamp is invalid (future or zero)
     NoAggregatedReading = 9, // No aggregated reading available
+    InvalidAggregationWindow = 10,
 }
 
 #[contract]
@@ -237,6 +238,9 @@ impl OracleContract {
         reading_type: ReadingType,
         max_reading_age: u64,
     ) -> Result<(), Error> {
+        if max_reading_age == 0 {
+            return Err(Error::InvalidAggregationWindow);
+        }
         // Get the history of readings
         let history_key = DataKey::ReadingHistory(geo_cell.clone(), reading_type);
         let history: Vec<HistoricalReading> = env

@@ -69,7 +69,7 @@ export class ContractClient {
     // Poll for result
     let result = await this.server.getTransaction(sent.hash);
     while (result.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       result = await this.server.getTransaction(sent.hash);
     }
 

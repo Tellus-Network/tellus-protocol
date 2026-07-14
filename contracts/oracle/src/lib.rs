@@ -115,6 +115,7 @@ pub enum Error {
     InvalidTimestamp = 8,    // Timestamp is invalid (future or zero)
     NoAggregatedReading = 9, // No aggregated reading available
     InvalidAggregationWindow = 10,
+    InvalidGeoCell = 11,
 }
 
 #[contract]
@@ -157,6 +158,10 @@ impl OracleContract {
         signature: BytesN<64>,
     ) -> Result<(), Error> {
         submitter.require_auth();
+
+        if geo_cell.is_empty() {
+            return Err(Error::InvalidGeoCell);
+        }
 
         // Retrieve and validate contract configuration
         let config: Config = Self::get_config(env.clone())?;

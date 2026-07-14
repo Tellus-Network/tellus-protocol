@@ -94,6 +94,7 @@ pub enum Error {
     AlreadyTriggered = 3,
     ThresholdNotMet = 4,
     InvalidPolicyId = 5,
+    InactivePolicy = 6,
 }
 
 #[contract]
@@ -150,6 +151,10 @@ impl TriggerContract {
         // 1. Fetch policy details from Policy contract
         let policy_client = PolicyClient::new(&env, &config.policy_contract);
         let policy = policy_client.get_policy(&policy_id);
+
+        if !matches!(policy.state, PolicyState::Active) {
+            return Err(Error::InactivePolicy);
+        }
 
         // Check if season has ended (policy expired)
         if current_time > policy.season_end {

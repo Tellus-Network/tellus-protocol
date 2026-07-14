@@ -216,7 +216,7 @@ fn test_trigger_threshold_not_met() {
     let pool_contract_id = env.register_contract(None, tellus_pool::PoolContract);
     let pool_client = tellus_pool::PoolContractClient::new(&env, &pool_contract_id);
     pool_client.initialize(&admin, &token_client.address, &500);
-    pool_client.deposit(&provider, &100_000);
+    pool_client.deposit(&provider, &300_000);
 
     let oracle_contract_id = env.register_contract(None, tellus_oracle::OracleContract);
     let oracle_client = tellus_oracle::OracleContractClient::new(&env, &oracle_contract_id);
@@ -268,11 +268,6 @@ fn test_trigger_threshold_not_met() {
         &pool_contract_id,
     );
 
-    // Try to evaluate - threshold not met
-    let result = trigger_client.try_evaluate_policy(&policy_id);
-
-    assert!(result.is_err());
-
     let expired_id = policy_client.register_policy(
         &farmer,
         &geo_cell,
@@ -283,5 +278,20 @@ fn test_trigger_threshold_not_met() {
         &200,
         &7000,
     );
+    let inactive_id = policy_client.register_policy(
+        &farmer,
+        &geo_cell,
+        &String::from_str(&env, "maize"),
+        &1_000_000,
+        &2_000_000,
+        &10_000,
+        &200,
+        &7000,
+    );
+    policy_client.update_policy_state(&inactive_id, &tellus_policy::PolicyState::Triggered);
+
+    // Create all policies before expected failures; Soroban rolls failed invocations back.
+    assert!(trigger_client.try_evaluate_policy(&policy_id).is_err());
     assert!(trigger_client.try_evaluate_policy(&expired_id).is_err());
+    assert!(trigger_client.try_evaluate_policy(&inactive_id).is_err());
 }

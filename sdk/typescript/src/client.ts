@@ -63,6 +63,11 @@ export class TellusClient {
     return await this.poolClient.getProviderShares(providerAddress);
   }
 
+  /** Get a provider's current pro-rata pool value. */
+  async getProviderValue(providerAddress: string): Promise<bigint> {
+    return await this.poolClient.getProviderValue(providerAddress);
+  }
+
   /**
    * Deposit capital into the liquidity pool
    * @param keypair - Keypair of the liquidity provider

@@ -78,6 +78,18 @@ export class ContractClient {
 }
 
 export class PoolContractClient extends ContractClient {
+  async getProviderValue(provider: string): Promise<bigint> {
+    const operation = this.contract.call(
+      'get_provider_value',
+      Address.fromString(provider).toScVal()
+    );
+    const result = await this.simulateTransaction(provider, operation);
+    if (SorobanRpc.Api.isSimulationSuccess(result)) {
+      return scValToNative(result.result!.retval);
+    }
+    throw new Error('Failed to get provider value');
+  }
+
   async getProviderShares(provider: string): Promise<bigint> {
     const operation = this.contract.call(
       'get_provider_shares',

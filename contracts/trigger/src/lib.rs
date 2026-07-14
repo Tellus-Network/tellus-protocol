@@ -126,6 +126,14 @@ impl TriggerContract {
         Ok(())
     }
 
+    /// Return the configured contract dependencies.
+    pub fn get_config(env: Env) -> Result<Config, Error> {
+        env.storage()
+            .instance()
+            .get(&DataKey::Config)
+            .ok_or(Error::NotInitialized)
+    }
+
     /// Evaluate a policy
     pub fn evaluate_policy(env: Env, policy_id: u64) -> Result<(), Error> {
         if policy_id == 0 {

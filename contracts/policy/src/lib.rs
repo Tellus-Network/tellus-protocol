@@ -2,7 +2,7 @@
 
 use soroban_sdk::{contract, contracterror, contractimpl, contracttype, Address, Env, String, Vec};
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[contracttype]
 pub enum PolicyState {
     Active,
@@ -79,8 +79,11 @@ impl PolicyContract {
         farmer: Address,
         farm_geohash: String,
         crop_type: String,
+        season_start: u64,
+        season_end: u64,
         coverage_amount: i128,
         rainfall_threshold: u32,
+        ndvi_baseline: u32,
     ) -> Result<u64, Error> {
         farmer.require_auth();
 
@@ -100,19 +103,17 @@ impl PolicyContract {
             .get(&DataKey::NextPolicyId)
             .unwrap_or(1);
 
-        let current_time = env.ledger().timestamp();
-
-        // Create policy
+        // Create policy using passed values
         let policy = Policy {
             policy_id,
             farmer: farmer.clone(),
             farm_geohash: farm_geohash.clone(),
             crop_type,
-            season_start: current_time,
-            season_end: current_time + (90 * 24 * 60 * 60), // 90 days
+            season_start,
+            season_end,
             coverage_amount,
             rainfall_threshold,
-            ndvi_baseline: 0,
+            ndvi_baseline,
             state: PolicyState::Active,
         };
 
@@ -249,8 +250,11 @@ mod test {
                 farmer,
                 String::from_str(env, "9q5ct"),
                 String::from_str(env, "maize"),
+                1_000_000,
+                2_000_000,
                 10_000,
                 200,
+                0,
             )
             .unwrap()
         });

@@ -85,11 +85,15 @@ impl PoolContract {
             return Err(Error::InvalidAmount);
         }
 
-        let _config: PoolConfig = env
+        let config: PoolConfig = env
             .storage()
             .instance()
             .get(&DataKey::Config)
             .ok_or(Error::NotInitialized)?;
+
+        // Transfer stablecoin from provider to pool
+        let token_client = soroban_sdk::token::Client::new(&env, &config.stablecoin_asset);
+        token_client.transfer(&provider, &env.current_contract_address(), &amount);
 
         let total_capital: i128 = env
             .storage()
@@ -197,6 +201,10 @@ impl PoolContract {
             .instance()
             .set(&DataKey::TotalShares, &(total_shares - shares));
 
+        // Transfer stablecoin back to provider
+        let token_client = soroban_sdk::token::Client::new(&env, &config.stablecoin_asset);
+        token_client.transfer(&env.current_contract_address(), &provider, &amount_to_return);
+
         Ok(amount_to_return)
     }
 
@@ -270,6 +278,10 @@ impl PoolContract {
         env.storage()
             .instance()
             .set(&DataKey::TotalCapital, &(total_capital - amount));
+
+        // Transfer stablecoin payout to the farmer
+        let token_client = soroban_sdk::token::Client::new(&env, &config.stablecoin_asset);
+        token_client.transfer(&env.current_contract_address(), &farmer, &amount);
 
         Ok(())
     }

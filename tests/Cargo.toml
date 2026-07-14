@@ -1,0 +1,16 @@
+[package]
+name = "tellus-integration-tests"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[test]]
+name = "integration_tests"
+path = "main.rs"
+
+[dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+tellus-pool = { path = "../contracts/pool", features = ["testutils"] }
+tellus-oracle = { path = "../contracts/oracle", features = ["testutils"] }
+tellus-policy = { path = "../contracts/policy", features = ["testutils"] }
+tellus-trigger = { path = "../contracts/trigger", features = ["testutils"] }

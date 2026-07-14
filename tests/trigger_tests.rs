@@ -100,6 +100,10 @@ fn test_trigger_flow_drought() {
     let farmer_balance =
         soroban_sdk::token::Client::new(&env, &token_client.address).balance(&farmer);
     assert_eq!(farmer_balance, 10_000); // Full payout
+    assert_eq!(
+        trigger_client.get_trigger_event(&policy_id).trigger_reason,
+        String::from_str(&env, "drought_detected")
+    );
 
     // Check policy state
     let policy = policy_client.get_policy(&policy_id);

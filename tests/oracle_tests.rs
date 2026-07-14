@@ -131,6 +131,19 @@ fn test_oracle_aggregation_median() {
         oracle_client.get_median(&geo_cell, &tellus_oracle::ReadingType::Rainfall),
         250
     );
+
+    oracle_client.submit_reading(
+        &oracle1,
+        &geo_cell,
+        &tellus_oracle::ReadingType::Rainfall,
+        &250,
+        &1_000_000,
+        &signature,
+    );
+    assert_eq!(
+        oracle_client.get_median(&geo_cell, &tellus_oracle::ReadingType::Rainfall),
+        250
+    );
 }
 
 #[test]

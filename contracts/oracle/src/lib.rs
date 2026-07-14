@@ -241,6 +241,12 @@ impl OracleContract {
         if max_reading_age == 0 {
             return Err(Error::InvalidAggregationWindow);
         }
+        let config = Self::get_config(env.clone())?;
+        let aggregation_age = if max_reading_age > config.max_reading_age {
+            config.max_reading_age
+        } else {
+            max_reading_age
+        };
         // Get the history of readings
         let history_key = DataKey::ReadingHistory(geo_cell.clone(), reading_type);
         let history: Vec<HistoricalReading> = env
@@ -259,7 +265,7 @@ impl OracleContract {
         let mut valid_readings: Vec<u32> = vec![&env];
         for reading in history.iter() {
             let reading_age = current_time - reading.timestamp;
-            if reading_age <= max_reading_age {
+            if reading_age <= aggregation_age {
                 valid_readings.push_back(reading.value);
             }
         }

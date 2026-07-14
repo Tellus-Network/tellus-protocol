@@ -59,6 +59,7 @@ pub enum Error {
     InvalidAmount = 3,
     PolicyNotFound = 4,
     PolicyNotExpired = 5,
+    InvalidSeason = 6,
 }
 
 #[contract]
@@ -99,6 +100,9 @@ impl PolicyContract {
 
         if coverage_amount <= 0 {
             return Err(Error::InvalidAmount);
+        }
+        if season_end <= season_start {
+            return Err(Error::InvalidSeason);
         }
 
         let config: Config = env

@@ -5,6 +5,7 @@ members = [
     "contracts/policy",
     "contracts/oracle",
     "contracts/trigger",
+    "tests",
 ]
 
 [workspace.dependencies]

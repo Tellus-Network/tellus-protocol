@@ -131,7 +131,7 @@ impl OracleContract {
 
         let config = Config {
             admin: admin.clone(),
-            max_history_size: 100, // Default history size
+            max_history_size: 100, // Default history size (configurable)
             max_reading_age,
         };
         env.storage().instance().set(&DataKey::Config, &config);

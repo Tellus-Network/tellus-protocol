@@ -23,6 +23,7 @@ export interface Policy {
   state: PolicyState;
 }
 
+// Pool statistics (totalCapital and other values are in smallest token units)
 export interface PoolStats {
   totalCapital: bigint;
   lockedAmount: bigint;

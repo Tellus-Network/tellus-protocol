@@ -46,6 +46,8 @@ use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, vec, Address, BytesN, Env, String, Vec,
 };
 
+pub const DEFAULT_MAX_HISTORY_SIZE: u32 = 100;
+
 #[derive(Clone, Copy, PartialEq)]
 #[contracttype]
 pub enum ReadingType {
@@ -131,7 +133,7 @@ impl OracleContract {
 
         let config = Config {
             admin: admin.clone(),
-            max_history_size: 100, // Default history size (configurable)
+            max_history_size: DEFAULT_MAX_HISTORY_SIZE,
             max_reading_age,
         };
         env.storage().instance().set(&DataKey::Config, &config);

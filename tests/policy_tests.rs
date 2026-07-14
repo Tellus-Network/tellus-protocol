@@ -152,7 +152,7 @@ fn test_policy_list_by_farmer() {
         &7000,
     );
 
-    policy_client.register_policy(
+    let second_policy_id = policy_client.register_policy(
         &farmer,
         &String::from_str(&env, "9q5cu"),
         &String::from_str(&env, "wheat"),
@@ -162,6 +162,8 @@ fn test_policy_list_by_farmer() {
         &180,
         &6500,
     );
+
+    assert_eq!(second_policy_id, 2);
 
     let policies = policy_client.list_policies_by_farmer(&farmer);
     assert_eq!(policies.len(), 2);

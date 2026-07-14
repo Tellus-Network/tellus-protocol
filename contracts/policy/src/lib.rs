@@ -204,7 +204,7 @@ impl PolicyContract {
             .get(&DataKey::Policy(policy_id))
             .ok_or(Error::PolicyNotFound)?;
 
-        if matches!(policy.state, PolicyState::Expired)
+        if matches!(policy.state, PolicyState::Expired | PolicyState::Triggered)
             && matches!(new_state, PolicyState::Active)
         {
             return Err(Error::InvalidStateTransition);

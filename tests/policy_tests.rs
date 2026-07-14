@@ -233,3 +233,25 @@ fn test_policy_cannot_reactivate_expired_policy() {
     client.expire_policy(&id);
     assert!(client.try_update_policy_state(&id, &tellus_policy::PolicyState::Active).is_err());
 }
+
+#[test]
+fn test_policy_cannot_reactivate_triggered_policy() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let farmer = Address::generate(&env);
+    let provider = Address::generate(&env);
+    let token = create_token_contract(&env, &token_admin);
+    token.mint(&provider, &100_000);
+    let pool_id = env.register_contract(None, tellus_pool::PoolContract);
+    let pool = tellus_pool::PoolContractClient::new(&env, &pool_id);
+    pool.initialize(&admin, &token.address, &500);
+    pool.deposit(&provider, &100_000);
+    let contract_id = env.register_contract(None, tellus_policy::PolicyContract);
+    let client = tellus_policy::PolicyContractClient::new(&env, &contract_id);
+    client.initialize(&admin, &pool_id);
+    let id = client.register_policy(&farmer, &String::from_str(&env, "9q5ct"), &String::from_str(&env, "maize"), &1, &2, &10_000, &200, &7000);
+    client.update_policy_state(&id, &tellus_policy::PolicyState::Triggered);
+    assert!(client.try_update_policy_state(&id, &tellus_policy::PolicyState::Active).is_err());
+}

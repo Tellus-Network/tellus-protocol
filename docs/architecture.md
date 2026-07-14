@@ -13,6 +13,9 @@ Caller ------------ simulated trigger ---> Trigger contract
 
 ## Pool Contract
 
+The `min_collateral_ratio` value is scaled by 100. For example, `500`
+requires five units of free capital for every unit of locked coverage.
+
 Purpose: record liquidity provider capital, shares, coverage locks, and simulated payout releases.
 
 Implemented methods:

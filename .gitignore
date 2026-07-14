@@ -6,7 +6,7 @@ test_snapshots/
 
 # Node
 node_modules/
-dist/
+dist/ # built SDK output
 *.log
 npm-debug.log*
 yarn-debug.log*

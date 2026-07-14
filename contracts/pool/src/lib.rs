@@ -53,6 +53,24 @@ pub struct PoolContract;
 
 #[contractimpl]
 impl PoolContract {
+    fn validate_coverage_capacity(
+        config: &PoolConfig,
+        total_capital: i128,
+        new_locked: i128,
+    ) -> Result<(), Error> {
+        if new_locked > total_capital {
+            return Err(Error::InsufficientCapital);
+        }
+        let required_free_capital = new_locked
+            .checked_mul(i128::from(config.min_collateral_ratio))
+            .ok_or(Error::InsufficientCapital)?
+            / 100;
+        if total_capital - new_locked < required_free_capital {
+            return Err(Error::InsufficientCapital);
+        }
+        Ok(())
+    }
+
     /// Initialize the liquidity pool with admin, stablecoin asset, and minimum collateral ratio
     pub fn initialize(
         env: Env,
@@ -247,19 +265,7 @@ impl PoolContract {
         let new_locked = locked_amount
             .checked_add(amount)
             .ok_or(Error::InsufficientCapital)?;
-        if new_locked > total_capital {
-            return Err(Error::InsufficientCapital);
-        }
-
-        // min_collateral_ratio is scaled by 100 (500 means 5:1 free capital
-        // to locked coverage). Keep enough capital unlocked after this policy.
-        let required_free_capital = new_locked
-            .checked_mul(i128::from(config.min_collateral_ratio))
-            .ok_or(Error::InsufficientCapital)?
-            / 100;
-        if total_capital - new_locked < required_free_capital {
-            return Err(Error::InsufficientCapital);
-        }
+        Self::validate_coverage_capacity(&config, total_capital, new_locked)?;
 
         // Store the lock
         env.storage()

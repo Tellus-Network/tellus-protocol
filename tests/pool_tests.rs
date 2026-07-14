@@ -114,6 +114,7 @@ fn test_pool_deposit_and_withdraw() {
     // Withdraw
     let amount = pool_client.withdraw(&provider, &50_000);
     assert_eq!(amount, 50_000);
+    assert_eq!(pool_client.get_provider_shares(&provider), 50_000);
 
     let stats = pool_client.get_pool_stats();
     assert_eq!(stats.total_capital, 50_000);

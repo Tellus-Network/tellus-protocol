@@ -49,7 +49,7 @@ The trigger contract does not fetch policy or oracle data. It accepts:
 - `simulated_rainfall`
 - `simulated_threshold`
 
-If `simulated_rainfall < simulated_threshold`, the contract records a trigger event with reason `drought_detected` and a hardcoded payout amount. No token transfer occurs.
+If `simulated_rainfall < simulated_threshold`, the contract records a trigger event with reason `drought_detected` and a hardcoded payout amount. No token transfer occurs (simulated accounting only).
 
 ## Development Use
 

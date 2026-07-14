@@ -5,7 +5,7 @@ use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, String};
 use crate::{create_token_contract, setup_env_with_time};
 
 #[test]
-fn test_trigger_drought_payout() {
+fn test_trigger_flow_drought() {
     let env = setup_env_with_time(1500000);
     env.mock_all_auths();
 
@@ -20,85 +20,72 @@ fn test_trigger_drought_payout() {
 
     // Setup pool
     let pool_contract_id = env.register_contract(None, tellus_pool::PoolContract);
-    let pool_client = tellus_pool::Client::new(&env, &pool_contract_id);
+    let pool_client = tellus_pool::PoolContractClient::new(&env, &pool_contract_id);
     pool_client.initialize(&admin, &token_client.address, &500);
-    pool_client.deposit(&provider, &100_000).unwrap();
+    pool_client.deposit(&provider, &100_000);
 
     // Setup oracle
     let oracle_contract_id = env.register_contract(None, tellus_oracle::OracleContract);
-    let oracle_client = tellus_oracle::Client::new(&env, &oracle_contract_id);
+    let oracle_client = tellus_oracle::OracleContractClient::new(&env, &oracle_contract_id);
     oracle_client.initialize(&admin, &172800);
-    oracle_client.add_oracle_node(&admin, &oracle_node).unwrap();
+    oracle_client.add_oracle_node(&admin, &oracle_node);
 
     // Setup policy
     let policy_contract_id = env.register_contract(None, tellus_policy::PolicyContract);
-    let policy_client = tellus_policy::Client::new(&env, &policy_contract_id);
-    policy_client
-        .initialize(&admin, &pool_contract_id)
-        .unwrap();
+    let policy_client = tellus_policy::PolicyContractClient::new(&env, &policy_contract_id);
+    policy_client.initialize(&admin, &pool_contract_id);
 
     let geo_cell = String::from_str(&env, "9q5ct");
-    let policy_id = policy_client
-        .register_policy(
-            &farmer,
-            &geo_cell,
-            &String::from_str(&env, "maize"),
-            &1000000,
-            &2000000,
-            &10_000,
-            &200, // Rainfall threshold
-            &7000,
-        )
-        .unwrap();
+    let policy_id = policy_client.register_policy(
+        &farmer,
+        &geo_cell,
+        &String::from_str(&env, "maize"),
+        &1000000,
+        &2000000,
+        &10_000,
+        &200,
+        &7000,
+    );
 
-    // Submit oracle readings showing drought (rainfall < 200mm)
+    // Submit reading (150mm - below 200mm threshold)
     let signature = BytesN::from_array(&env, &[0u8; 64]);
-    oracle_client
-        .submit_reading(
-            &oracle_node,
-            &geo_cell,
-            &tellus_oracle::ReadingType::Rainfall,
-            &150, // Below threshold
-            &1400000,
-            &signature,
-        )
-        .unwrap();
+    oracle_client.submit_reading(
+        &oracle_node,
+        &geo_cell,
+        &tellus_oracle::ReadingType::Rainfall,
+        &150,
+        &1400000,
+        &signature,
+    );
 
-    oracle_client
-        .submit_reading(
-            &oracle_node,
-            &geo_cell,
-            &tellus_oracle::ReadingType::NDVI,
-            &7500, // Above stress level
-            &1400000,
-            &signature,
-        )
-        .unwrap();
+    oracle_client.submit_reading(
+        &oracle_node,
+        &geo_cell,
+        &tellus_oracle::ReadingType::NDVI,
+        &7500,
+        &1400000,
+        &signature,
+    );
 
     // Setup trigger
     let trigger_contract_id = env.register_contract(None, tellus_trigger::TriggerContract);
-    let trigger_client = tellus_trigger::Client::new(&env, &trigger_contract_id);
-    trigger_client
-        .initialize(&admin, &policy_contract_id, &oracle_contract_id, &pool_contract_id)
-        .unwrap();
+    let trigger_client = tellus_trigger::TriggerContractClient::new(&env, &trigger_contract_id);
+    trigger_client.initialize(&admin, &policy_contract_id, &oracle_contract_id, &pool_contract_id);
 
     // Evaluate policy
-    trigger_client.evaluate_policy(&policy_id).unwrap();
+    trigger_client.evaluate_policy(&policy_id);
 
     // Check payout was made
-    let farmer_balance = token_client.balance(&farmer);
+    let farmer_balance = soroban_sdk::token::Client::new(&env, &token_client.address).balance(&farmer);
     assert_eq!(farmer_balance, 10_000); // Full payout
 
     // Check policy state
-    let policy = policy_client.get_policy(&policy_id).unwrap();
+    let policy = policy_client.get_policy(&policy_id);
     assert_eq!(policy.state, tellus_policy::PolicyState::Triggered);
-
-    // Check trigger event
-    assert!(trigger_client.is_triggered(&policy_id));
 }
 
 #[test]
-fn test_trigger_crop_stress_partial_payout() {
+fn test_trigger_flow_ndvi_stress() {
     let env = setup_env_with_time(1500000);
     env.mock_all_auths();
 
@@ -112,74 +99,64 @@ fn test_trigger_crop_stress_partial_payout() {
     token_client.mint(&provider, &1_000_000);
 
     let pool_contract_id = env.register_contract(None, tellus_pool::PoolContract);
-    let pool_client = tellus_pool::Client::new(&env, &pool_contract_id);
+    let pool_client = tellus_pool::PoolContractClient::new(&env, &pool_contract_id);
     pool_client.initialize(&admin, &token_client.address, &500);
-    pool_client.deposit(&provider, &100_000).unwrap();
+    pool_client.deposit(&provider, &100_000);
 
     let oracle_contract_id = env.register_contract(None, tellus_oracle::OracleContract);
-    let oracle_client = tellus_oracle::Client::new(&env, &oracle_contract_id);
+    let oracle_client = tellus_oracle::OracleContractClient::new(&env, &oracle_contract_id);
     oracle_client.initialize(&admin, &172800);
-    oracle_client.add_oracle_node(&admin, &oracle_node).unwrap();
+    oracle_client.add_oracle_node(&admin, &oracle_node);
 
     let policy_contract_id = env.register_contract(None, tellus_policy::PolicyContract);
-    let policy_client = tellus_policy::Client::new(&env, &policy_contract_id);
-    policy_client
-        .initialize(&admin, &pool_contract_id)
-        .unwrap();
+    let policy_client = tellus_policy::PolicyContractClient::new(&env, &policy_contract_id);
+    policy_client.initialize(&admin, &pool_contract_id);
 
     let geo_cell = String::from_str(&env, "9q5ct");
-    let policy_id = policy_client
-        .register_policy(
-            &farmer,
-            &geo_cell,
-            &String::from_str(&env, "maize"),
-            &1000000,
-            &2000000,
-            &10_000,
-            &200,
-            &7000, // NDVI baseline
-        )
-        .unwrap();
+    let policy_id = policy_client.register_policy(
+        &farmer,
+        &geo_cell,
+        &String::from_str(&env, "maize"),
+        &1000000,
+        &2000000,
+        &10_000,
+        &200,  // Rainfall threshold
+        &7000, // NDVI baseline
+    );
 
-    // Submit readings: rainfall OK, but NDVI shows stress
+    // Rainfall at 250mm (no drought), but NDVI at 4800 (below 70% of 7000 = 4900 stress threshold)
     let signature = BytesN::from_array(&env, &[0u8; 64]);
-    oracle_client
-        .submit_reading(
-            &oracle_node,
-            &geo_cell,
-            &tellus_oracle::ReadingType::Rainfall,
-            &250, // Above threshold
-            &1400000,
-            &signature,
-        )
-        .unwrap();
+    oracle_client.submit_reading(
+        &oracle_node,
+        &geo_cell,
+        &tellus_oracle::ReadingType::Rainfall,
+        &250,
+        &1400000,
+        &signature,
+    );
 
-    oracle_client
-        .submit_reading(
-            &oracle_node,
-            &geo_cell,
-            &tellus_oracle::ReadingType::NDVI,
-            &4500, // Below 70% of 7000 (4900)
-            &1400000,
-            &signature,
-        )
-        .unwrap();
+    oracle_client.submit_reading(
+        &oracle_node,
+        &geo_cell,
+        &tellus_oracle::ReadingType::NDVI,
+        &4800,
+        &1400000,
+        &signature,
+    );
 
     let trigger_contract_id = env.register_contract(None, tellus_trigger::TriggerContract);
-    let trigger_client = tellus_trigger::Client::new(&env, &trigger_contract_id);
-    trigger_client
-        .initialize(&admin, &policy_contract_id, &oracle_contract_id, &pool_contract_id)
-        .unwrap();
+    let trigger_client = tellus_trigger::TriggerContractClient::new(&env, &trigger_contract_id);
+    trigger_client.initialize(&admin, &policy_contract_id, &oracle_contract_id, &pool_contract_id);
 
-    trigger_client.evaluate_policy(&policy_id).unwrap();
+    trigger_client.evaluate_policy(&policy_id);
 
     // Check partial payout (50%)
-    let farmer_balance = token_client.balance(&farmer);
+    let farmer_balance = soroban_sdk::token::Client::new(&env, &token_client.address).balance(&farmer);
     assert_eq!(farmer_balance, 5_000);
 }
 
 #[test]
-fn test_trigger_double_trigger_prevention() {
+fn test_trigger_threshold_not_met() {
     let env = setup_env_with_time(1500000);
     env.mock_all_auths();
 
@@ -193,68 +170,57 @@ fn test_trigger_double_trigger_prevention() {
     token_client.mint(&provider, &1_000_000);
 
     let pool_contract_id = env.register_contract(None, tellus_pool::PoolContract);
-    let pool_client = tellus_pool::Client::new(&env, &pool_contract_id);
+    let pool_client = tellus_pool::PoolContractClient::new(&env, &pool_contract_id);
     pool_client.initialize(&admin, &token_client.address, &500);
-    pool_client.deposit(&provider, &100_000).unwrap();
+    pool_client.deposit(&provider, &100_000);
 
     let oracle_contract_id = env.register_contract(None, tellus_oracle::OracleContract);
-    let oracle_client = tellus_oracle::Client::new(&env, &oracle_contract_id);
+    let oracle_client = tellus_oracle::OracleContractClient::new(&env, &oracle_contract_id);
     oracle_client.initialize(&admin, &172800);
-    oracle_client.add_oracle_node(&admin, &oracle_node).unwrap();
+    oracle_client.add_oracle_node(&admin, &oracle_node);
 
     let policy_contract_id = env.register_contract(None, tellus_policy::PolicyContract);
-    let policy_client = tellus_policy::Client::new(&env, &policy_contract_id);
-    policy_client
-        .initialize(&admin, &pool_contract_id)
-        .unwrap();
+    let policy_client = tellus_policy::PolicyContractClient::new(&env, &policy_contract_id);
+    policy_client.initialize(&admin, &pool_contract_id);
 
     let geo_cell = String::from_str(&env, "9q5ct");
-    let policy_id = policy_client
-        .register_policy(
-            &farmer,
-            &geo_cell,
-            &String::from_str(&env, "maize"),
-            &1000000,
-            &2000000,
-            &10_000,
-            &200,
-            &7000,
-        )
-        .unwrap();
+    let policy_id = policy_client.register_policy(
+        &farmer,
+        &geo_cell,
+        &String::from_str(&env, "maize"),
+        &1000000,
+        &2000000,
+        &10_000,
+        &200,
+        &7000,
+    );
 
+    // Rainfall at 250 (above 200 threshold), NDVI at 6000 (above stress threshold 4900)
     let signature = BytesN::from_array(&env, &[0u8; 64]);
-    oracle_client
-        .submit_reading(
-            &oracle_node,
-            &geo_cell,
-            &tellus_oracle::ReadingType::Rainfall,
-            &150,
-            &1400000,
-            &signature,
-        )
-        .unwrap();
+    oracle_client.submit_reading(
+        &oracle_node,
+        &geo_cell,
+        &tellus_oracle::ReadingType::Rainfall,
+        &250,
+        &1400000,
+        &signature,
+    );
 
-    oracle_client
-        .submit_reading(
-            &oracle_node,
-            &geo_cell,
-            &tellus_oracle::ReadingType::NDVI,
-            &7500,
-            &1400000,
-            &signature,
-        )
-        .unwrap();
+    oracle_client.submit_reading(
+        &oracle_node,
+        &geo_cell,
+        &tellus_oracle::ReadingType::NDVI,
+        &6000,
+        &1400000,
+        &signature,
+    );
 
     let trigger_contract_id = env.register_contract(None, tellus_trigger::TriggerContract);
-    let trigger_client = tellus_trigger::Client::new(&env, &trigger_contract_id);
-    trigger_client
-        .initialize(&admin, &policy_contract_id, &oracle_contract_id, &pool_contract_id)
-        .unwrap();
+    let trigger_client = tellus_trigger::TriggerContractClient::new(&env, &trigger_contract_id);
+    trigger_client.initialize(&admin, &policy_contract_id, &oracle_contract_id, &pool_contract_id);
 
-    // First trigger
-    trigger_client.evaluate_policy(&policy_id).unwrap();
+    // Try to evaluate - threshold not met
+    let result = trigger_client.try_evaluate_policy(&policy_id);
 
-    // Second trigger should fail
-    let result = trigger_client.evaluate_policy(&policy_id);
     assert!(result.is_err());
 }

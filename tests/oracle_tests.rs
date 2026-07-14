@@ -332,6 +332,10 @@ fn test_oracle_aggregation_filters_by_age() {
     // Should only have the recent reading (300), not the old one (100)
     assert_eq!(aggregated.value, 300);
     assert_eq!(aggregated.sample_count, 1);
+    assert_eq!(
+        oracle_client.get_median(&geo_cell, &tellus_oracle::ReadingType::Rainfall),
+        200
+    );
 }
 
 #[test]

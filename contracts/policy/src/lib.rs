@@ -61,6 +61,7 @@ pub enum Error {
     PolicyNotExpired = 5,
     InvalidSeason = 6,
     InvalidGeohash = 7,
+    InvalidCropType = 8,
 }
 
 #[contract]
@@ -107,6 +108,9 @@ impl PolicyContract {
         }
         if farm_geohash.len() == 0 {
             return Err(Error::InvalidGeohash);
+        }
+        if crop_type.len() == 0 {
+            return Err(Error::InvalidCropType);
         }
 
         let config: Config = env

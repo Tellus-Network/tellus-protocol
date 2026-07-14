@@ -58,6 +58,11 @@ export class TellusClient {
     return await this.poolClient.getPoolStats();
   }
 
+  /** Get the LP shares owned by a provider. */
+  async getProviderShares(providerAddress: string): Promise<bigint> {
+    return await this.poolClient.getProviderShares(providerAddress);
+  }
+
   /**
    * Deposit capital into the liquidity pool
    * @param keypair - Keypair of the liquidity provider

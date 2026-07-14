@@ -17,6 +17,7 @@ fn test_trigger_rejects_zero_policy_id() {
         &Address::generate(&env),
     );
     assert_eq!(client.get_config().admin, admin);
+    assert!(client.try_get_trigger_event(&1).is_err());
     assert!(client.try_evaluate_policy(&0).is_err());
 }
 

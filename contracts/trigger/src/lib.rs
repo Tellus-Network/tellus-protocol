@@ -95,6 +95,7 @@ pub enum Error {
     ThresholdNotMet = 4,
     InvalidPolicyId = 5,
     InactivePolicy = 6,
+    EventNotFound = 7,
 }
 
 #[contract]
@@ -241,7 +242,7 @@ impl TriggerContract {
         env.storage()
             .persistent()
             .get(&DataKey::Triggered(policy_id))
-            .ok_or(Error::NotInitialized)
+            .ok_or(Error::EventNotFound)
     }
 
     /// Check if a policy has been triggered

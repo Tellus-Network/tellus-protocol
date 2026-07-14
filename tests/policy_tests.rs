@@ -168,6 +168,8 @@ fn test_policy_list_by_farmer() {
 
     let policies = policy_client.list_policies_by_farmer(&farmer);
     assert_eq!(policies.len(), 2);
+    assert_eq!(policies.get(0).unwrap(), 1);
+    assert_eq!(policies.get(1).unwrap(), 2);
 }
 
 #[test]

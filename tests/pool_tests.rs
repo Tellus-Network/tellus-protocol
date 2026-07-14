@@ -122,6 +122,23 @@ fn test_pool_deposit_and_withdraw() {
 }
 
 #[test]
+fn test_pool_provider_value_tracks_deposits() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let provider = Address::generate(&env);
+    let token_client = create_token_contract(&env, &token_admin);
+    token_client.mint(&provider, &100_000);
+    let pool_id = env.register_contract(None, tellus_pool::PoolContract);
+    let client = tellus_pool::PoolContractClient::new(&env, &pool_id);
+    client.initialize(&admin, &token_client.address, &500);
+    client.deposit(&provider, &10_000);
+    client.deposit(&provider, &5_000);
+    assert_eq!(client.get_provider_value(&provider), 15_000);
+}
+
+#[test]
 fn test_pool_collateral_ratio_enforcement() {
     let env = Env::default();
     env.mock_all_auths();

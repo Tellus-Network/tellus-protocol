@@ -12,6 +12,7 @@ import {
 import { Policy, PoolStats, AggregatedReading, TriggerEvent } from './types';
 
 export class ContractClient {
+  private static readonly TRANSACTION_POLL_TIMEOUT_MS = 30_000;
   protected contract: Contract;
   protected server: SorobanRpc.Server;
   protected networkPassphrase: string;
@@ -67,8 +68,12 @@ export class ContractClient {
     }
 
     // Poll for result
+    const pollDeadline = Date.now() + ContractClient.TRANSACTION_POLL_TIMEOUT_MS;
     let result = await this.server.getTransaction(sent.hash);
     while (result.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND) {
+      if (Date.now() >= pollDeadline) {
+        throw new Error(`Transaction polling timed out: ${sent.hash}`);
+      }
       await new Promise((resolve) => setTimeout(resolve, 500));
       result = await this.server.getTransaction(sent.hash);
     }

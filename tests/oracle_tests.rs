@@ -235,6 +235,26 @@ fn test_oracle_rejects_zero_timestamp() {
 }
 
 #[test]
+fn test_oracle_accepts_freshness_boundary() {
+    let env = setup_env_with_time(1_000);
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let node = Address::generate(&env);
+    let id = env.register_contract(None, tellus_oracle::OracleContract);
+    let client = tellus_oracle::OracleContractClient::new(&env, &id);
+    client.initialize(&admin, &100);
+    client.add_oracle_node(&admin, &node);
+    client.submit_reading(
+        &node,
+        &String::from_str(&env, "9q5ct"),
+        &tellus_oracle::ReadingType::Rainfall,
+        &10,
+        &900,
+        &BytesN::from_array(&env, &[0; 64]),
+    );
+}
+
+#[test]
 fn test_oracle_aggregation_filters_by_age() {
     let env = setup_env_with_time(1000000);
     env.mock_all_auths();

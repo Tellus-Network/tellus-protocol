@@ -33,6 +33,9 @@ Important limitation: the pool contract updates accounting values only. It does 
 
 ## Policy Contract
 
+Policy states move forward only: `Active` policies may become `Triggered` or
+`Expired`, while terminal policies cannot transition back to `Active`.
+
 Purpose: store farmer policy records.
 
 Implemented methods:

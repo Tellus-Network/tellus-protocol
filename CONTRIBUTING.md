@@ -14,7 +14,7 @@ Thank you for helping improve Tellus Protocol. This repository is an open-source
 
 Prerequisites:
 
-- Rust 1.81.0, installed automatically when using `rustup` with `rust-toolchain.toml`.
+- Rust 1.88.0, installed automatically when using `rustup` with `rust-toolchain.toml`.
 - Stellar CLI for deployment work.
 - Node.js 20+ for TypeScript SDK development.
 - Git.

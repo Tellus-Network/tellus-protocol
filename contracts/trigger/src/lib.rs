@@ -1,6 +1,64 @@
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, Address, Env, String};
+use soroban_sdk::{
+    contract, contractclient, contracterror, contractimpl, contracttype, Address, Env, String,
+};
+
+#[derive(Clone)]
+#[contracttype]
+pub enum PolicyState {
+    Active,
+    Triggered,
+    Expired,
+}
+
+#[derive(Clone)]
+#[contracttype]
+pub struct Policy {
+    pub policy_id: u64,
+    pub farmer: Address,
+    pub farm_geohash: String,
+    pub crop_type: String,
+    pub season_start: u64,
+    pub season_end: u64,
+    pub coverage_amount: i128,
+    pub rainfall_threshold: u32,
+    pub ndvi_baseline: u32,
+    pub state: PolicyState,
+}
+
+#[contractclient(name = "PolicyClient")]
+pub trait PolicyInterface {
+    fn get_policy(env: Env, policy_id: u64) -> Policy;
+    fn update_policy_state(env: Env, policy_id: u64, new_state: PolicyState);
+}
+
+#[derive(Clone, Copy)]
+#[contracttype]
+pub enum ReadingType {
+    Rainfall,
+    NDVI,
+    SoilMoisture,
+}
+
+#[derive(Clone)]
+#[contracttype]
+pub struct LatestReading {
+    pub geo_cell: String,
+    pub reading_type: ReadingType,
+    pub value: u32,
+    pub timestamp: u64,
+}
+
+#[contractclient(name = "OracleClient")]
+pub trait OracleInterface {
+    fn get_latest(env: Env, geo_cell: String, reading_type: ReadingType) -> LatestReading;
+}
+
+#[contractclient(name = "PoolClient")]
+pub trait PoolInterface {
+    fn release_payout(env: Env, policy_id: u64, farmer: Address, amount: i128);
+}
 
 #[derive(Clone)]
 #[contracttype]
@@ -67,10 +125,7 @@ impl TriggerContract {
     }
 
     /// Evaluate a policy
-    pub fn evaluate_policy(
-        env: Env,
-        policy_id: u64,
-    ) -> Result<(), Error> {
+    pub fn evaluate_policy(env: Env, policy_id: u64) -> Result<(), Error> {
         let config: Config = env
             .storage()
             .instance()
@@ -89,7 +144,7 @@ impl TriggerContract {
         let current_time = env.ledger().timestamp();
 
         // 1. Fetch policy details from Policy contract
-        let policy_client = tellus_policy::PolicyContractClient::new(&env, &config.policy_contract);
+        let policy_client = PolicyClient::new(&env, &config.policy_contract);
         let policy = policy_client.get_policy(&policy_id);
 
         // Check if season has ended (policy expired)
@@ -98,23 +153,21 @@ impl TriggerContract {
         }
 
         // 2. Fetch latest readings from Oracle contract
-        let oracle_client = tellus_oracle::OracleContractClient::new(&env, &config.oracle_contract);
+        let oracle_client = OracleClient::new(&env, &config.oracle_contract);
 
         // Check if rainfall is below threshold (drought)
-        let rainfall_reading = oracle_client
-            .get_latest(&policy.farm_geohash, &tellus_oracle::ReadingType::Rainfall);
+        let rainfall_reading =
+            oracle_client.get_latest(&policy.farm_geohash, &ReadingType::Rainfall);
 
         if rainfall_reading.value < policy.rainfall_threshold {
             let payout_amount = policy.coverage_amount;
 
             // Release payout from pool
-            let pool_client = tellus_pool::PoolContractClient::new(&env, &config.pool_contract);
-            pool_client
-                .release_payout(&policy_id, &policy.farmer, &payout_amount);
+            let pool_client = PoolClient::new(&env, &config.pool_contract);
+            pool_client.release_payout(&policy_id, &policy.farmer, &payout_amount);
 
             // Update policy state
-            policy_client
-                .update_policy_state(&policy_id, &tellus_policy::PolicyState::Triggered);
+            policy_client.update_policy_state(&policy_id, &PolicyState::Triggered);
 
             let trigger_event = TriggerEvent {
                 policy_id,
@@ -133,21 +186,18 @@ impl TriggerContract {
 
         // Check NDVI if baseline is set (crop stress)
         if policy.ndvi_baseline > 0 {
-            let ndvi_reading = oracle_client
-                .get_latest(&policy.farm_geohash, &tellus_oracle::ReadingType::NDVI);
+            let ndvi_reading = oracle_client.get_latest(&policy.farm_geohash, &ReadingType::NDVI);
 
             let stress_threshold = (policy.ndvi_baseline * 7) / 10; // 70% of baseline
             if ndvi_reading.value < stress_threshold {
                 let payout_amount = policy.coverage_amount / 2; // 50% partial payout
 
                 // Release payout from pool
-                let pool_client = tellus_pool::PoolContractClient::new(&env, &config.pool_contract);
-                pool_client
-                    .release_payout(&policy_id, &policy.farmer, &payout_amount);
+                let pool_client = PoolClient::new(&env, &config.pool_contract);
+                pool_client.release_payout(&policy_id, &policy.farmer, &payout_amount);
 
                 // Update policy state
-                policy_client
-                    .update_policy_state(&policy_id, &tellus_policy::PolicyState::Triggered);
+                policy_client.update_policy_state(&policy_id, &PolicyState::Triggered);
 
                 let trigger_event = TriggerEvent {
                     policy_id,

@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, String};
+use soroban_sdk::{testutils::Address as _, Address, BytesN, String};
 
 use crate::{create_token_contract, setup_env_with_time};
 
@@ -81,13 +81,19 @@ fn test_happy_path_drought_payout() {
     // 6. Setup trigger contract
     let trigger_contract_id = env.register_contract(None, tellus_trigger::TriggerContract);
     let trigger_client = tellus_trigger::TriggerContractClient::new(&env, &trigger_contract_id);
-    trigger_client.initialize(&admin, &policy_contract_id, &oracle_contract_id, &pool_contract_id);
+    trigger_client.initialize(
+        &admin,
+        &policy_contract_id,
+        &oracle_contract_id,
+        &pool_contract_id,
+    );
 
     // 7. Evaluate policy and trigger payout
     trigger_client.evaluate_policy(&policy_id);
 
     // 8. Verify payout received
-    let farmer_balance = soroban_sdk::token::Client::new(&env, &token_client.address).balance(&farmer);
+    let farmer_balance =
+        soroban_sdk::token::Client::new(&env, &token_client.address).balance(&farmer);
     assert_eq!(farmer_balance, 10_000);
 
     // Verify policy state updated
@@ -151,7 +157,7 @@ fn test_expired_policy_no_payout() {
         &geo_cell,
         &tellus_oracle::ReadingType::Rainfall,
         &150,
-        &1400000,
+        &2400000,
         &signature,
     );
 
@@ -160,13 +166,18 @@ fn test_expired_policy_no_payout() {
         &geo_cell,
         &tellus_oracle::ReadingType::NDVI,
         &7500,
-        &1400000,
+        &2400000,
         &signature,
     );
 
     let trigger_contract_id = env.register_contract(None, tellus_trigger::TriggerContract);
     let trigger_client = tellus_trigger::TriggerContractClient::new(&env, &trigger_contract_id);
-    trigger_client.initialize(&admin, &policy_contract_id, &oracle_contract_id, &pool_contract_id);
+    trigger_client.initialize(
+        &admin,
+        &policy_contract_id,
+        &oracle_contract_id,
+        &pool_contract_id,
+    );
 
     // Try to evaluate after season end
     let result = trigger_client.try_evaluate_policy(&policy_id);

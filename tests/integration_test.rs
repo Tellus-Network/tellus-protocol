@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use soroban_sdk::{
-    testutils::{Address as _, Ledger, LedgerInfo},
+    testutils::{Ledger, LedgerInfo},
     token, Address, Env,
 };
 
@@ -26,11 +26,3 @@ pub fn setup_env_with_time(timestamp: u64) -> Env {
     });
     env
 }
-
-#[test]
-fn test_integration_placeholder() {
-    // Placeholder test
-    assert!(true);
-}
-
-

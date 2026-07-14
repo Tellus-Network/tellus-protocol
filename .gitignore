@@ -1,8 +1,8 @@
 # Rust
 target/
+test_snapshots/
 **/*.rs.bk
 *.pdb
-Cargo.lock
 
 # Node
 node_modules/

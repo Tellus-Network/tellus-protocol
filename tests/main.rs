@@ -1,6 +1,6 @@
-extern crate tellus_pool;
-extern crate tellus_policy;
 extern crate tellus_oracle;
+extern crate tellus_policy;
+extern crate tellus_pool;
 extern crate tellus_trigger;
 
 mod integration_test;

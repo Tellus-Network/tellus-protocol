@@ -51,7 +51,7 @@ tests/
 
 ## Prerequisites
 
-- Rust 1.81.0, pinned by `rust-toolchain.toml`
+- Rust 1.88.0, pinned by `rust-toolchain.toml`
 - Stellar CLI, for contract deployment
 - Node.js 20+, for TypeScript SDK work
 

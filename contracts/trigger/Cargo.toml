@@ -8,9 +8,6 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 soroban-sdk = { workspace = true }
-tellus-pool = { path = "../pool" }
-tellus-oracle = { path = "../oracle" }
-tellus-policy = { path = "../policy" }
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }

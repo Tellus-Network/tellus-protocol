@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, String};
+use soroban_sdk::{testutils::Address as _, Address, BytesN, String};
 
 use crate::{create_token_contract, setup_env_with_time};
 
@@ -70,13 +70,19 @@ fn test_trigger_flow_drought() {
     // Setup trigger
     let trigger_contract_id = env.register_contract(None, tellus_trigger::TriggerContract);
     let trigger_client = tellus_trigger::TriggerContractClient::new(&env, &trigger_contract_id);
-    trigger_client.initialize(&admin, &policy_contract_id, &oracle_contract_id, &pool_contract_id);
+    trigger_client.initialize(
+        &admin,
+        &policy_contract_id,
+        &oracle_contract_id,
+        &pool_contract_id,
+    );
 
     // Evaluate policy
     trigger_client.evaluate_policy(&policy_id);
 
     // Check payout was made
-    let farmer_balance = soroban_sdk::token::Client::new(&env, &token_client.address).balance(&farmer);
+    let farmer_balance =
+        soroban_sdk::token::Client::new(&env, &token_client.address).balance(&farmer);
     assert_eq!(farmer_balance, 10_000); // Full payout
 
     // Check policy state
@@ -146,12 +152,18 @@ fn test_trigger_flow_ndvi_stress() {
 
     let trigger_contract_id = env.register_contract(None, tellus_trigger::TriggerContract);
     let trigger_client = tellus_trigger::TriggerContractClient::new(&env, &trigger_contract_id);
-    trigger_client.initialize(&admin, &policy_contract_id, &oracle_contract_id, &pool_contract_id);
+    trigger_client.initialize(
+        &admin,
+        &policy_contract_id,
+        &oracle_contract_id,
+        &pool_contract_id,
+    );
 
     trigger_client.evaluate_policy(&policy_id);
 
     // Check partial payout (50%)
-    let farmer_balance = soroban_sdk::token::Client::new(&env, &token_client.address).balance(&farmer);
+    let farmer_balance =
+        soroban_sdk::token::Client::new(&env, &token_client.address).balance(&farmer);
     assert_eq!(farmer_balance, 5_000);
 }
 
@@ -217,7 +229,12 @@ fn test_trigger_threshold_not_met() {
 
     let trigger_contract_id = env.register_contract(None, tellus_trigger::TriggerContract);
     let trigger_client = tellus_trigger::TriggerContractClient::new(&env, &trigger_contract_id);
-    trigger_client.initialize(&admin, &policy_contract_id, &oracle_contract_id, &pool_contract_id);
+    trigger_client.initialize(
+        &admin,
+        &policy_contract_id,
+        &oracle_contract_id,
+        &pool_contract_id,
+    );
 
     // Try to evaluate - threshold not met
     let result = trigger_client.try_evaluate_policy(&policy_id);

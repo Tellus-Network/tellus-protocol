@@ -2,7 +2,7 @@
 
 use soroban_sdk::{testutils::Address as _, Address, Env};
 
-use crate::{create_token_contract, setup_env_with_time};
+use crate::create_token_contract;
 
 #[test]
 fn test_pool_initialization() {
@@ -117,6 +117,7 @@ fn test_pool_release_payout() {
     assert_eq!(stats.total_capital, 90_000);
     assert_eq!(stats.locked_amount, 0);
 
-    let farmer_balance = soroban_sdk::token::Client::new(&env, &token_client.address).balance(&farmer);
+    let farmer_balance =
+        soroban_sdk::token::Client::new(&env, &token_client.address).balance(&farmer);
     assert_eq!(farmer_balance, 10_000);
 }

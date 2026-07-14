@@ -1,6 +1,16 @@
 #![no_std]
+// Soroban entrypoints expose their ABI fields as positional parameters, and
+// register_policy currently requires all policy terms in one invocation.
+#![allow(clippy::too_many_arguments)]
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, Address, Env, String, Vec};
+use soroban_sdk::{
+    contract, contractclient, contracterror, contractimpl, contracttype, Address, Env, String, Vec,
+};
+
+#[contractclient(name = "PoolClient")]
+pub trait Pool {
+    fn lock_coverage(env: Env, policy_id: u64, amount: i128);
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[contracttype]
@@ -91,7 +101,7 @@ impl PolicyContract {
             return Err(Error::InvalidAmount);
         }
 
-        let _config: Config = env
+        let config: Config = env
             .storage()
             .instance()
             .get(&DataKey::Config)
@@ -116,6 +126,10 @@ impl PolicyContract {
             ndvi_baseline,
             state: PolicyState::Active,
         };
+
+        // Reserve pool capacity before persisting the policy. A failed
+        // cross-contract call aborts the registration transaction.
+        PoolClient::new(&env, &config.pool_contract).lock_coverage(&policy_id, &coverage_amount);
 
         // Store policy
         env.storage()
@@ -216,9 +230,18 @@ impl PolicyContract {
 mod test {
     use super::{PolicyContract, PolicyState};
     use soroban_sdk::{
+        contract, contractimpl,
         testutils::{Address as _, Ledger, LedgerInfo},
         Address, Env, String,
     };
+
+    #[contract]
+    struct MockPool;
+
+    #[contractimpl]
+    impl MockPool {
+        pub fn lock_coverage(_env: Env, _policy_id: u64, _amount: i128) {}
+    }
 
     fn setup_env_with_time(timestamp: u64) -> Env {
         let env = Env::default();
@@ -240,7 +263,7 @@ mod test {
 
         let admin = Address::generate(env);
         let farmer = Address::generate(env);
-        let pool_contract = Address::generate(env);
+        let pool_contract = env.register_contract(None, MockPool);
         let contract_id = env.register_contract(None, PolicyContract);
 
         let policy_id = env.as_contract(&contract_id, || {

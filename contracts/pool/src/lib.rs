@@ -142,7 +142,7 @@ impl PoolContract {
             return Err(Error::InvalidAmount);
         }
 
-        let _config: PoolConfig = env
+        let config: PoolConfig = env
             .storage()
             .instance()
             .get(&DataKey::Config)
@@ -203,26 +203,54 @@ impl PoolContract {
 
         // Transfer stablecoin back to provider
         let token_client = soroban_sdk::token::Client::new(&env, &config.stablecoin_asset);
-        token_client.transfer(&env.current_contract_address(), &provider, &amount_to_return);
+        token_client.transfer(
+            &env.current_contract_address(),
+            &provider,
+            &amount_to_return,
+        );
 
         Ok(amount_to_return)
     }
 
     /// Lock coverage amount for an active policy
     pub fn lock_coverage(env: Env, policy_id: u64, amount: i128) -> Result<(), Error> {
-        let _config: PoolConfig = env
+        if amount <= 0 {
+            return Err(Error::InvalidAmount);
+        }
+
+        let config: PoolConfig = env
             .storage()
             .instance()
             .get(&DataKey::Config)
             .ok_or(Error::NotInitialized)?;
 
+        let total_capital: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::TotalCapital)
+            .unwrap_or(0);
         let locked_amount: i128 = env
             .storage()
             .instance()
             .get(&DataKey::LockedAmount)
             .unwrap_or(0);
 
-        let new_locked = locked_amount + amount;
+        let new_locked = locked_amount
+            .checked_add(amount)
+            .ok_or(Error::InsufficientCapital)?;
+        if new_locked > total_capital {
+            return Err(Error::InsufficientCapital);
+        }
+
+        // min_collateral_ratio is scaled by 100 (500 means 5:1 free capital
+        // to locked coverage). Keep enough capital unlocked after this policy.
+        let required_free_capital = new_locked
+            .checked_mul(i128::from(config.min_collateral_ratio))
+            .ok_or(Error::InsufficientCapital)?
+            / 100;
+        if total_capital - new_locked < required_free_capital {
+            return Err(Error::InsufficientCapital);
+        }
 
         // Store the lock
         env.storage()
@@ -239,10 +267,10 @@ impl PoolContract {
     pub fn release_payout(
         env: Env,
         policy_id: u64,
-        _farmer: Address,
+        farmer: Address,
         amount: i128,
     ) -> Result<(), Error> {
-        let _config: PoolConfig = env
+        let config: PoolConfig = env
             .storage()
             .instance()
             .get(&DataKey::Config)

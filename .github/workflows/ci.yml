@@ -60,7 +60,7 @@ jobs:
           key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
 
   test:
     name: Test Suite
@@ -94,7 +94,7 @@ jobs:
           key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run tests
-        run: cargo test --all-features
+        run: cargo test --locked --all-features
 
   build:
     name: Build WASM
@@ -129,7 +129,9 @@ jobs:
           key: ${{ runner.os }}-target-wasm-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build WASM contracts
-        run: cargo build --target wasm32-unknown-unknown --release
+        run: >-
+          cargo build --locked --target wasm32-unknown-unknown --release
+          --workspace --exclude tellus-integration-tests
 
       - name: Upload WASM artifacts
         uses: actions/upload-artifact@v4

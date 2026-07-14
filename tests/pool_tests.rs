@@ -57,6 +57,20 @@ fn test_pool_rejects_negative_deposit() {
 }
 
 #[test]
+fn test_pool_rejects_zero_share_withdrawal() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let provider = Address::generate(&env);
+    let token_client = create_token_contract(&env, &token_admin);
+    let pool_id = env.register_contract(None, tellus_pool::PoolContract);
+    let client = tellus_pool::PoolContractClient::new(&env, &pool_id);
+    client.initialize(&admin, &token_client.address, &500);
+    assert!(client.try_withdraw(&provider, &0).is_err());
+}
+
+#[test]
 fn test_pool_deposit_and_withdraw() {
     let env = Env::default();
     env.mock_all_auths();

@@ -62,6 +62,7 @@ pub enum Error {
     InvalidSeason = 6,
     InvalidGeohash = 7,
     InvalidCropType = 8,
+    InvalidStateTransition = 9,
 }
 
 #[contract]
@@ -202,6 +203,12 @@ impl PolicyContract {
             .persistent()
             .get(&DataKey::Policy(policy_id))
             .ok_or(Error::PolicyNotFound)?;
+
+        if matches!(policy.state, PolicyState::Expired)
+            && matches!(new_state, PolicyState::Active)
+        {
+            return Err(Error::InvalidStateTransition);
+        }
 
         policy.state = new_state;
         env.storage()

@@ -256,4 +256,16 @@ fn test_trigger_threshold_not_met() {
     let result = trigger_client.try_evaluate_policy(&policy_id);
 
     assert!(result.is_err());
+
+    let expired_id = policy_client.register_policy(
+        &farmer,
+        &geo_cell,
+        &String::from_str(&env, "maize"),
+        &1_000_000,
+        &1_400_000,
+        &10_000,
+        &200,
+        &7000,
+    );
+    assert!(trigger_client.try_evaluate_policy(&expired_id).is_err());
 }

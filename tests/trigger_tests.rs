@@ -56,7 +56,7 @@ fn test_trigger_flow_drought() {
         &geo_cell,
         &String::from_str(&env, "maize"),
         &1000000,
-        &2000000,
+        &1500000,
         &10_000,
         &200,
         &7000,

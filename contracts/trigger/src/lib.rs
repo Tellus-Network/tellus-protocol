@@ -179,27 +179,15 @@ impl TriggerContract {
 
         if rainfall_reading.value < policy.rainfall_threshold {
             let payout_amount = policy.coverage_amount;
-
-            // Release payout from pool
-            let pool_client = PoolClient::new(&env, &config.pool_contract);
-            pool_client.release_payout(&policy_id, &policy.farmer, &payout_amount);
-
-            // Update policy state
-            policy_client.update_policy_state(&policy_id, &PolicyState::Triggered);
-
-            let trigger_event = TriggerEvent {
+            Self::settle_policy(
+                &env,
+                &config,
+                &policy,
                 policy_id,
-                triggered_at: current_time,
-                rainfall_value: rainfall_reading.value,
                 payout_amount,
-                trigger_reason: String::from_str(&env, "drought_detected"),
-            };
-            // Persist trigger event for audit and replay
-
-            env.storage()
-                .persistent()
-                .set(&DataKey::Triggered(policy_id), &trigger_event);
-
+                rainfall_reading.value,
+                String::from_str(&env, "drought_detected"),
+            );
             return Ok(());
         }
 
@@ -210,31 +198,48 @@ impl TriggerContract {
             let stress_threshold = (policy.ndvi_baseline * 7) / 10; // 70% of baseline
             if ndvi_reading.value < stress_threshold {
                 let payout_amount = policy.coverage_amount / 2; // 50% partial payout
-
-                // Release payout from pool
-                let pool_client = PoolClient::new(&env, &config.pool_contract);
-                pool_client.release_payout(&policy_id, &policy.farmer, &payout_amount);
-
-                // Update policy state
-                policy_client.update_policy_state(&policy_id, &PolicyState::Triggered);
-
-                let trigger_event = TriggerEvent {
+                Self::settle_policy(
+                    &env,
+                    &config,
+                    &policy,
                     policy_id,
-                    triggered_at: current_time,
-                    rainfall_value: rainfall_reading.value,
                     payout_amount,
-                    trigger_reason: String::from_str(&env, "crop_stress_detected"),
-                };
-
-                env.storage()
-                    .persistent()
-                    .set(&DataKey::Triggered(policy_id), &trigger_event);
-
+                    rainfall_reading.value,
+                    String::from_str(&env, "crop_stress_detected"),
+                );
                 return Ok(());
             }
         }
 
         Err(Error::ThresholdNotMet)
+    }
+
+    fn settle_policy(
+        env: &Env,
+        config: &Config,
+        policy: &Policy,
+        policy_id: u64,
+        payout_amount: i128,
+        rainfall_value: u32,
+        trigger_reason: String,
+    ) {
+        PoolClient::new(env, &config.pool_contract).release_payout(
+            &policy_id,
+            &policy.farmer,
+            &payout_amount,
+        );
+        PolicyClient::new(env, &config.policy_contract)
+            .update_policy_state(&policy_id, &PolicyState::Triggered);
+        env.storage().persistent().set(
+            &DataKey::Triggered(policy_id),
+            &TriggerEvent {
+                policy_id,
+                triggered_at: env.ledger().timestamp(),
+                rainfall_value,
+                payout_amount,
+                trigger_reason,
+            },
+        );
     }
 
     /// Get trigger event details for a policy

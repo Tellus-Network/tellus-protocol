@@ -173,6 +173,18 @@ fn test_pool_collateral_ratio_enforcement() {
 }
 
 #[test]
+fn test_pool_rejects_zero_coverage_lock() {
+    let env = Env::default();
+    let admin = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let token_client = create_token_contract(&env, &token_admin);
+    let pool_id = env.register_contract(None, tellus_pool::PoolContract);
+    let client = tellus_pool::PoolContractClient::new(&env, &pool_id);
+    client.initialize(&admin, &token_client.address, &500);
+    assert!(client.try_lock_coverage(&1, &0).is_err());
+}
+
+#[test]
 fn test_pool_release_payout() {
     let env = Env::default();
     env.mock_all_auths();

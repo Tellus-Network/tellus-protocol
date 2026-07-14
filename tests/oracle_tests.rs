@@ -127,6 +127,10 @@ fn test_oracle_aggregation_median() {
 
     assert_eq!(aggregated.value, 250); // Median of [100, 250, 300]
     assert_eq!(aggregated.sample_count, 3);
+    assert_eq!(
+        oracle_client.get_median(&geo_cell, &tellus_oracle::ReadingType::Rainfall),
+        250
+    );
 }
 
 #[test]

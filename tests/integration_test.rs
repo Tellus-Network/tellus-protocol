@@ -7,7 +7,8 @@ use soroban_sdk::{
 
 // Helper function to create a test token
 pub fn create_token_contract<'a>(env: &Env, admin: &Address) -> token::StellarAssetClient<'a> {
-    token::StellarAssetClient::new(env, &env.register_stellar_asset_contract_v2(admin.clone()))
+    let contract = env.register_stellar_asset_contract_v2(admin.clone());
+    token::StellarAssetClient::new(env, &contract.address())
 }
 
 // Helper function to setup test environment with timestamp

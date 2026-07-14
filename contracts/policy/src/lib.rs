@@ -60,6 +60,7 @@ pub enum Error {
     PolicyNotFound = 4,
     PolicyNotExpired = 5,
     InvalidSeason = 6,
+    InvalidGeohash = 7,
 }
 
 #[contract]
@@ -103,6 +104,9 @@ impl PolicyContract {
         }
         if season_end <= season_start {
             return Err(Error::InvalidSeason);
+        }
+        if farm_geohash.len() == 0 {
+            return Err(Error::InvalidGeohash);
         }
 
         let config: Config = env

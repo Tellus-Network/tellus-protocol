@@ -91,6 +91,20 @@ fn test_policy_rejects_reversed_season() {
 }
 
 #[test]
+fn test_policy_rejects_empty_geohash() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let farmer = Address::generate(&env);
+    let pool_id = env.register_contract(None, tellus_pool::PoolContract);
+    let policy_id = env.register_contract(None, tellus_policy::PolicyContract);
+    let client = tellus_policy::PolicyContractClient::new(&env, &policy_id);
+    client.initialize(&admin, &pool_id);
+    let result = client.try_register_policy(&farmer, &String::from_str(&env, ""), &String::from_str(&env, "maize"), &1, &2, &1, &200, &7000);
+    assert!(result.is_err());
+}
+
+#[test]
 fn test_policy_list_by_farmer() {
     let env = Env::default();
     env.mock_all_auths();

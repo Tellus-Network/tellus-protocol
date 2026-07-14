@@ -195,6 +195,14 @@ impl PolicyContract {
             .saturating_sub(1)
     }
 
+    /// Return the policy contract's initialization configuration.
+    pub fn get_config(env: Env) -> Result<Config, Error> {
+        env.storage()
+            .instance()
+            .get(&DataKey::Config)
+            .ok_or(Error::NotInitialized)
+    }
+
     /// Update policy state
     pub fn update_policy_state(
         env: Env,

@@ -164,7 +164,7 @@ impl OracleContract {
         }
 
         // Retrieve and validate contract configuration
-        let config: Config = Self::get_config(env.clone())?;
+        let config: Config = Self::load_config(env.clone())?;
 
         // Validate submitter is whitelisted
         Self::validate_submitter(env.clone(), submitter.clone())?;
@@ -246,7 +246,7 @@ impl OracleContract {
         if max_reading_age == 0 {
             return Err(Error::InvalidAggregationWindow);
         }
-        let config = Self::get_config(env.clone())?;
+        let config = Self::load_config(env.clone())?;
         let aggregation_age = if max_reading_age > config.max_reading_age {
             config.max_reading_age
         } else {
@@ -345,11 +345,16 @@ impl OracleContract {
 
     /// Internal helper to get the contract configuration
     /// Returns NotInitialized if contract has not been initialized
-    fn get_config(env: Env) -> Result<Config, Error> {
+    fn load_config(env: Env) -> Result<Config, Error> {
         env.storage()
             .instance()
             .get(&DataKey::Config)
             .ok_or(Error::NotInitialized)
+    }
+
+    /// Return the active oracle configuration.
+    pub fn get_config(env: Env) -> Result<Config, Error> {
+        Self::load_config(env)
     }
 
     /// Internal helper to validate submitter authorization

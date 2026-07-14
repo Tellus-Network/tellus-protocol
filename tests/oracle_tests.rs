@@ -15,6 +15,7 @@ fn test_oracle_initialization() {
     oracle_client.initialize(&admin, &172800); // 48 hours
 
     assert!(oracle_client.is_whitelisted(&admin));
+    assert_eq!(oracle_client.get_config().max_reading_age, 172800);
 }
 
 #[test]

@@ -64,6 +64,11 @@ fn test_oracle_submit_reading() {
         &1000000,
         &signature,
     );
+
+    assert_eq!(
+        oracle_client.get_history_count(&geo_cell, &tellus_oracle::ReadingType::Rainfall),
+        1
+    );
 }
 
 #[test]
